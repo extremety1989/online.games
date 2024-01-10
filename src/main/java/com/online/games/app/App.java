@@ -20,6 +20,16 @@ import static com.mongodb.client.model.Filters.or;
 import java.util.Scanner;
 
 public class App {
+
+    public static void createUser(collection, surname, firstname, age){
+        Document newuser = new Document()
+        .append("surname", surname)
+        .append("firstname", firstname)
+        .append("age", age);
+        collection.insertOne(newuser);
+        System.out.println("user created successfully!");
+    }
+
     public static void main(String[] args) {
         // String connectionString =
         // "mongodb+srv://andranik020489:r9D0SAvIJ51G4yq5@master1.jrj5jud.mongodb.net/?retryWrites=true&w=majority";
@@ -144,6 +154,7 @@ public class App {
                         boolean sub_exit = false;
 
                         while (!sub_exit) {
+
                             System.out.println("\n");
                             System.out.println("Choose an operation:");
                             System.out.println("1: Create user");
@@ -156,7 +167,9 @@ public class App {
 
                             int sub_option = scanner.nextInt();
                             scanner.nextLine(); 
+
                             if (sub_option == 1) {
+
                                 // Create a new user
                                 System.out.print("Enter surname: ");
                                 String surname = scanner.nextLine();
@@ -165,16 +178,11 @@ public class App {
                                 System.out.print("Enter age: ");
                                 int age = scanner.nextInt();
                                 scanner.nextLine(); 
-
-                                Document newuser = new Document()
-                                        .append("surname", surname)
-                                        .append("firstname", firstname)
-                                        .append("age", age);
-
-                                collection.insertOne(newuser);
-                                System.out.println("user created successfully!");
+                                createUser(database.getCollection("users"), surname, firstname, age);
                                 break;
+
                             } else if (sub_option == 2) {
+
                                 // Read a user
                                 System.out.print("Enter surname to find: ");
                                 String searchSurname = scanner.nextLine();
@@ -185,6 +193,7 @@ public class App {
                                     System.out.println("user not found.");
                                 }
                                 break;
+
                             } else if (sub_option == 3) {
                                 // Update a user
                                 System.out.print(
