@@ -1,0 +1,18 @@
+services:
+  mongo:
+    image: mongo
+    ports:
+      - "27018:27017" # Map host port 27018 to container port 27017
+    networks:
+      - app-network
+    restart: always
+    volumes:
+      - mongodb_data_container:/data/db
+
+networks:
+  app-network:
+    name: app-network
+    driver: bridge
+
+volumes:
+  mongodb_data_container:
