@@ -10,6 +10,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Collation;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 
@@ -17,18 +18,12 @@ import org.bson.Document;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.or;
 
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class App {
 
-    public static void createUser(collection, surname, firstname, age){
-        Document newuser = new Document()
-        .append("surname", surname)
-        .append("firstname", firstname)
-        .append("age", age);
-        collection.insertOne(newuser);
-        System.out.println("user created successfully!");
-    }
+
 
     public static void main(String[] args) {
         // String connectionString =
@@ -178,23 +173,31 @@ public class App {
                                 System.out.print("Enter age: ");
                                 int age = scanner.nextInt();
                                 scanner.nextLine(); 
-                                createUser(database.getCollection("users"), surname, firstname, age);
+                                System.out.print("Enter email: ");
+                                String email = scanner.nextLine();
+                                System.out.print("Enter username: ");
+                                String username = scanner.nextLine();
+                                System.out.print("Enter password: ");
+                                String password = scanner.nextLine();
+                                User.createUser(database.getCollection("users"), surname, firstname, age, email, username, password);
                                 break;
 
                             } else if (sub_option == 2) {
 
                                 // Read a user
-                                System.out.print("Enter surname to find: ");
-                                String searchSurname = scanner.nextLine();
-                                Document founduser = collection.find(eq("surname", searchSurname)).first();
+                                System.out.print("Enter username to find: ");
+                                String username = scanner.nextLine();
+                                Document founduser = collection.find(eq("surname", username)).first();
                                 if (founduser != null) {
-                                    System.out.println(founduser.toJson());
+                                    System.out.println(founduser.getString("surname") + " " 
+                                    + founduser.getString("firstname") + " " + founduser.getInteger("age"));
                                 } else {
                                     System.out.println("user not found.");
                                 }
                                 break;
 
                             } else if (sub_option == 3) {
+
                                 // Update a user
                                 System.out.print(
                                         "Enter surname or firstname of user to update (or press enter to skip): ");
@@ -226,32 +229,15 @@ public class App {
                                 }
 
                                 if (!updateDoc.isEmpty()) {
-                                    UpdateResult updateResult = collection.updateOne(
-                                            or(eq("surname", update), eq("firstname", update)),
-                                            new Document("$set", updateDoc));
-
-                                    if (updateResult.getModifiedCount() > 0) {
-                                        System.out.println("user updated successfully!");
-                                    } else {
-                                        System.out.println("No user found.");
-                                    }
+                                    User.update(collection, update, updateDoc);
                                     break;
                                 }
                                 break;
                             } else if (sub_option == 4) {
                                 // Delete a user
-                                System.out.print("Enter id, surname or fistname of user to delete: ");
+                                System.out.print("Enter id, username or email of user to delete: ");
                                 String delete = scanner.nextLine();
-
-                                DeleteResult deleteResult = collection.deleteOne(or(
-                                        eq("surname", delete),
-                                        eq("firstname", delete),
-                                        eq("_id", delete)));
-                                if (deleteResult.getDeletedCount() > 0) {
-                                    System.out.println("user deleted successfully!");
-                                } else {
-                                    System.out.println("No user deleted.");
-                                }
+                                User.delete(collection, delete);
                                 break;
                             } else if (sub_option == 5) {
                                 System.out.println("Listing all users:");
@@ -274,17 +260,7 @@ public class App {
                                             "----------------------------------------------------------------------------");
 
                                     int skipDocuments = (currentPage - 1) * pageSize;
-                                    FindIterable<Document> pageusers = collection.find()
-                                            .skip(skipDocuments)
-                                            .limit(pageSize);
-                                    for (Document user : pageusers) {
-                                        Object id = user.get("_id");
-                                        System.out.printf("%-29s %-20s %-20s %-5d\n",
-                                                id.toString(),
-                                                user.getString("surname"),
-                                                user.getString("firstname"),
-                                                user.getInteger("age"));
-                                    }
+                                    User.read(collection, skipDocuments, pageSize);
 
                                     // Pagination controls
                                     System.out.println(
