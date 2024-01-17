@@ -4,33 +4,31 @@ import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.or;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Scanner;
 
 import org.bson.Document;
 
-import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 
-public class User {
+public class Game {
 
-    public void run(MongoCollection<Document> collection, Scanner scanner, MongoDatabase database){
-                        // Users management
+            public void run(MongoCollection<Document> collection, Scanner scanner, MongoDatabase database){
+                       
                         boolean sub_exit = false;
 
                         while (!sub_exit) {
 
                             System.out.println("\n");
                             System.out.println("Choose an operation:");
-                            System.out.println("1: Create user");
-                            System.out.println("2: Read user");
-                            System.out.println("3: Update user");
-                            System.out.println("4: Delete user");
-                            System.out.println("5: List All users");
+                            System.out.println("1: Create game");
+                            System.out.println("2: Read game");
+                            System.out.println("3: Update game");
+                            System.out.println("4: Delete game");
+                            System.out.println("5: List All games");
                             System.out.println("0: Return to main menu");
                             System.out.print("Enter option: ");
 
@@ -40,64 +38,48 @@ public class User {
                             if (sub_option == 1) {
 
                                 // Create a new user
-                                System.out.print("Enter surname: ");
-                                String surname = scanner.nextLine();
-                                System.out.print("Enter firstname: ");
-                                String firstname = scanner.nextLine();
-                                System.out.print("Enter age: ");
-                                int age = scanner.nextInt();
+                                System.out.print("Enter name: ");
+                                String name = scanner.nextLine();
+                      
+                                System.out.print("Enter price: ");
+                                Double price = scanner.nextDouble();
                                 scanner.nextLine(); 
-                                System.out.print("Enter email: ");
-                                String email = scanner.nextLine();
-                                System.out.print("Enter username: ");
-                                String username = scanner.nextLine();
-                                System.out.print("Enter password: ");
-                                String password = scanner.nextLine();
-                                this.create(database.getCollection("users"), surname, firstname, age, email, username, password);
+                                this.create(database.getCollection("games"), name, price);
                             
                             } else if (sub_option == 2) {
 
                                 // Read a user
-                                System.out.print("Enter username to find: ");
-                                String username = scanner.nextLine();
-                                Document founduser = collection.find(eq("surname", username)).first();
+                                System.out.print("Enter name to find: ");
+                                String name = scanner.nextLine();
+                                Document founduser = collection.find(eq("name", name)).first();
                                 if (founduser != null) {
-                                    System.out.println(founduser.getString("surname") + " " 
-                                    + founduser.getString("firstname") + " " + founduser.getInteger("age"));
+                                    System.out.println("Name: " + founduser.getString("name") + " Price:" + founduser.getInteger("price"));
                                 } else {
-                                    System.out.println("user not found.");
+                                    System.out.println("game not found.");
                                 }
 
                             } else if (sub_option == 3) {
 
-                                // Update a user
+                         
                                 System.out.print(
-                                        "Enter surname or firstname of user to update (or press enter to skip): ");
+                                        "Enter game-name or price to update (or press enter to skip): ");
                                 Document updateDoc = new Document();
                                 String update = scanner.nextLine();
 
-                                System.out.print("Enter new surname: ");
-                                String newSurname = scanner.nextLine();
-                                System.out.print("Enter new firstname: ");
-                                String newFirstname = scanner.nextLine();
-                                System.out.print("Enter new age: ");
-                                int newAge = 0;
-                                String ageInput = scanner.nextLine();
+                                System.out.print("Enter new name: ");
+                                String newName = scanner.nextLine();
 
-                                if (!ageInput.isEmpty()) {
-                                    newAge = Integer.parseInt(ageInput);
+                                System.out.print("Enter new price: ");
+                              
+                                String priceInput = scanner.nextLine();
+
+
+                                if (!newName.isEmpty()) {
+                                    updateDoc.append("name", newName);
                                 }
-
-                                if (!newSurname.isEmpty()) {
-                                    updateDoc.append("surname", newSurname);
-                                }
-
-                                if (!newFirstname.isEmpty()) {
-                                    updateDoc.append("firstname", newFirstname);
-                                }
-
-                                if (newAge > 0) {
-                                    updateDoc.append("age", newAge);
+                                Double newPrice = 0.0;
+                                if (!priceInput.isEmpty()) {
+                                    newPrice = Double.parseDouble(priceInput);
                                 }
 
                                 if (!updateDoc.isEmpty()) {
@@ -105,8 +87,8 @@ public class User {
                                 }
                  
                             } else if (sub_option == 4) {
-                                // Delete a user
-                                System.out.print("Enter id, username or email of user to delete: ");
+                                // Delete a game
+                                System.out.print("Enter id or name of game to delete: ");
                                 String delete = scanner.nextLine();
                                 this.delete(collection, delete);
                              
@@ -115,9 +97,9 @@ public class User {
                                 int pageSize = 5;
                                 long totalDocuments = collection.countDocuments();
                                 int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-                                System.out.printf("Total users: %d\n", totalDocuments);
+                                System.out.printf("Total games: %d\n", totalDocuments);
                                 if (totalPages == 0) {
-                                    System.out.println("No users found.");
+                                    System.out.println("No game found.");
                                 }else{
                                     int currentPage = 1; // Start with page 1
                                     boolean paginating = true;
@@ -125,7 +107,7 @@ public class User {
                                     while (paginating) {
                                        
                                         System.out.println("\n");
-                                        System.out.printf("%-29s %-20s %-20s %-5s\n", "Id", "Surname", "Firstname", "Age");
+                                        System.out.printf("%-29s %-30s %-5d\n", "Id", "Name", "Price");
                                         System.out.println(
                                                 "----------------------------------------------------------------------------");
     
@@ -178,70 +160,53 @@ public class User {
                             }
                         }
     }
-
-    private void create(MongoCollection<Document> collection, String surname, String firstname, Integer age, 
-        String email, String username, String password){
-        if (surname.isEmpty() || firstname.isEmpty() || age == null || email.isEmpty() || username.isEmpty() || password.isEmpty()) {
+        private void create(MongoCollection<Document> collection, String name, Double price){
+        if (name.isEmpty() || price == null) {
             System.out.println("Please enter all fields.");
             return;
         }
-        ArrayList<Document> games = new ArrayList<Document>();
-        ArrayList<Document> comments = new ArrayList<Document>();
-        ArrayList<Document> ratings = new ArrayList<Document>();
-        ArrayList<Document> transactions = new ArrayList<Document>();
 
-        Document newuser = new Document()
-        .append("surname", surname)
-        .append("firstname", firstname)
-        .append("age", age)
-        .append("email", email)
-        .append("username", username)
-        .append("password", password)
-        .append("games", games)
-        .append("comments", comments)
-        .append("ratings", ratings)
-        .append("transactions", transactions);
+        Document newgame = new Document()
+        .append("name", name)
+        .append("price", price);
 
-
-        collection.insertOne(newuser);
-        System.out.println("user created successfully!");
+        collection.insertOne(newgame);
+        System.out.println("game created successfully!");
     }
 
     private void read(MongoCollection<Document> collection, int skipDocuments, int pageSize) {
-        FindIterable<Document> pageusers = collection.find()
+        FindIterable<Document> pagegames = collection.find()
         .skip(skipDocuments)
         .limit(pageSize);
-        for (Document user : pageusers) {
-            Object id = user.get("_id");
-            System.out.printf("%-29s %-20s %-20s %-5d\n",
+        for (Document game : pagegames) {
+            Object id = game.get("_id");
+            System.out.printf("%-30s %-5d\n",
                     id.toString(),
-                    user.getString("surname"),
-                    user.getString("firstname"),
-                    user.getInteger("age"));
+                    game.getString("name"),
+                    game.getString("price"));
         }
     }
 
     private void delete(MongoCollection<Document> collection, String delete) {
          DeleteResult deleteResult = collection.deleteOne(or(
-                                        eq("username", delete),
-                                        eq("email", delete),
+                                        eq("name", delete),
                                         eq("_id", delete)));
                                 if (deleteResult.getDeletedCount() > 0) {
-                                    System.out.println("user deleted successfully!");
+                                    System.out.println("game deleted successfully!");
                                 } else {
-                                    System.out.println("No user deleted.");
+                                    System.out.println("No game deleted.");
                                 }
     }
 
     private void update(MongoCollection<Document> collection, String update, Document updateDoc){
             UpdateResult updateResult = collection.updateOne(
-                    or(eq("surname", update), eq("firstname", update)),
+                    or(eq("name", update), eq("price", update)),
                     new Document("$set", updateDoc));
 
             if (updateResult.getModifiedCount() > 0) {
-                System.out.println("user updated successfully!");
+                System.out.println("game updated successfully!");
             } else {
-                System.out.println("No user found.");
+                System.out.println("No game found.");
             }
     }
 }

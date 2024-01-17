@@ -3,34 +3,32 @@ package com.online.games.app;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.or;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.Scanner;
 
 import org.bson.Document;
 
-import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 
-public class User {
+public class Category {
 
-    public void run(MongoCollection<Document> collection, Scanner scanner, MongoDatabase database){
-                        // Users management
+            public void run(MongoCollection<Document> collection, Scanner scanner, MongoDatabase database){
+                       
                         boolean sub_exit = false;
 
                         while (!sub_exit) {
 
                             System.out.println("\n");
                             System.out.println("Choose an operation:");
-                            System.out.println("1: Create user");
-                            System.out.println("2: Read user");
-                            System.out.println("3: Update user");
-                            System.out.println("4: Delete user");
-                            System.out.println("5: List All users");
+                            System.out.println("1: Create category");
+                            System.out.println("2: Read category");
+                            System.out.println("3: Update category");
+                            System.out.println("4: Delete category");
+                            System.out.println("5: List All categories");
                             System.out.println("0: Return to main menu");
                             System.out.print("Enter option: ");
 
@@ -40,73 +38,45 @@ public class User {
                             if (sub_option == 1) {
 
                                 // Create a new user
-                                System.out.print("Enter surname: ");
-                                String surname = scanner.nextLine();
-                                System.out.print("Enter firstname: ");
-                                String firstname = scanner.nextLine();
-                                System.out.print("Enter age: ");
-                                int age = scanner.nextInt();
-                                scanner.nextLine(); 
-                                System.out.print("Enter email: ");
-                                String email = scanner.nextLine();
-                                System.out.print("Enter username: ");
-                                String username = scanner.nextLine();
-                                System.out.print("Enter password: ");
-                                String password = scanner.nextLine();
-                                this.create(database.getCollection("users"), surname, firstname, age, email, username, password);
+                                System.out.print("Enter name: ");
+                                String name = scanner.nextLine();
+                      
+                                this.create(database.getCollection("categories"), name);
                             
                             } else if (sub_option == 2) {
 
                                 // Read a user
-                                System.out.print("Enter username to find: ");
-                                String username = scanner.nextLine();
-                                Document founduser = collection.find(eq("surname", username)).first();
-                                if (founduser != null) {
-                                    System.out.println(founduser.getString("surname") + " " 
-                                    + founduser.getString("firstname") + " " + founduser.getInteger("age"));
+                                System.out.print("Enter name to find: ");
+                                String name = scanner.nextLine();
+                                Document found = collection.find(eq("name", name)).first();
+                                if (found != null) {
+                                    System.out.println("Name: " + found.getString("name"));
                                 } else {
-                                    System.out.println("user not found.");
+                                    System.out.println("category not found.");
                                 }
 
                             } else if (sub_option == 3) {
 
-                                // Update a user
+                         
                                 System.out.print(
-                                        "Enter surname or firstname of user to update (or press enter to skip): ");
+                                        "Enter category-name: ");
                                 Document updateDoc = new Document();
                                 String update = scanner.nextLine();
 
-                                System.out.print("Enter new surname: ");
-                                String newSurname = scanner.nextLine();
-                                System.out.print("Enter new firstname: ");
-                                String newFirstname = scanner.nextLine();
-                                System.out.print("Enter new age: ");
-                                int newAge = 0;
-                                String ageInput = scanner.nextLine();
+                                System.out.print("Enter new name: ");
+                                String newName = scanner.nextLine();
 
-                                if (!ageInput.isEmpty()) {
-                                    newAge = Integer.parseInt(ageInput);
+                                if (!newName.isEmpty()) {
+                                    updateDoc.append("name", newName);
                                 }
-
-                                if (!newSurname.isEmpty()) {
-                                    updateDoc.append("surname", newSurname);
-                                }
-
-                                if (!newFirstname.isEmpty()) {
-                                    updateDoc.append("firstname", newFirstname);
-                                }
-
-                                if (newAge > 0) {
-                                    updateDoc.append("age", newAge);
-                                }
-
+            
                                 if (!updateDoc.isEmpty()) {
                                     this.update(collection, update, updateDoc);
                                 }
                  
                             } else if (sub_option == 4) {
-                                // Delete a user
-                                System.out.print("Enter id, username or email of user to delete: ");
+                                // Delete a game
+                                System.out.print("Enter id or name of category to delete: ");
                                 String delete = scanner.nextLine();
                                 this.delete(collection, delete);
                              
@@ -115,9 +85,9 @@ public class User {
                                 int pageSize = 5;
                                 long totalDocuments = collection.countDocuments();
                                 int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-                                System.out.printf("Total users: %d\n", totalDocuments);
+                                System.out.printf("Total categories: %d\n", totalDocuments);
                                 if (totalPages == 0) {
-                                    System.out.println("No users found.");
+                                    System.out.println("No category found.");
                                 }else{
                                     int currentPage = 1; // Start with page 1
                                     boolean paginating = true;
@@ -125,7 +95,7 @@ public class User {
                                     while (paginating) {
                                        
                                         System.out.println("\n");
-                                        System.out.printf("%-29s %-20s %-20s %-5s\n", "Id", "Surname", "Firstname", "Age");
+                                        System.out.printf("%-29s %-30s\n", "Id", "Name");
                                         System.out.println(
                                                 "----------------------------------------------------------------------------");
     
@@ -178,70 +148,52 @@ public class User {
                             }
                         }
     }
-
-    private void create(MongoCollection<Document> collection, String surname, String firstname, Integer age, 
-        String email, String username, String password){
-        if (surname.isEmpty() || firstname.isEmpty() || age == null || email.isEmpty() || username.isEmpty() || password.isEmpty()) {
-            System.out.println("Please enter all fields.");
+        private void create(MongoCollection<Document> collection, String name){
+        if (name.isEmpty()) {
+            System.out.println("Please enter the field.");
             return;
         }
-        ArrayList<Document> games = new ArrayList<Document>();
-        ArrayList<Document> comments = new ArrayList<Document>();
-        ArrayList<Document> ratings = new ArrayList<Document>();
-        ArrayList<Document> transactions = new ArrayList<Document>();
 
-        Document newuser = new Document()
-        .append("surname", surname)
-        .append("firstname", firstname)
-        .append("age", age)
-        .append("email", email)
-        .append("username", username)
-        .append("password", password)
-        .append("games", games)
-        .append("comments", comments)
-        .append("ratings", ratings)
-        .append("transactions", transactions);
+        Document category = new Document()
+        .append("name", name);
 
-
-        collection.insertOne(newuser);
-        System.out.println("user created successfully!");
+        collection.insertOne(category);
+        System.out.println("game created successfully!");
     }
 
     private void read(MongoCollection<Document> collection, int skipDocuments, int pageSize) {
-        FindIterable<Document> pageusers = collection.find()
+        FindIterable<Document> pagegames = collection.find()
         .skip(skipDocuments)
         .limit(pageSize);
-        for (Document user : pageusers) {
-            Object id = user.get("_id");
-            System.out.printf("%-29s %-20s %-20s %-5d\n",
+        for (Document game : pagegames) {
+            Object id = game.get("_id");
+            System.out.printf("%-30s %-5d\n",
                     id.toString(),
-                    user.getString("surname"),
-                    user.getString("firstname"),
-                    user.getInteger("age"));
+                    game.getString("name"),
+                    game.getString("price"));
         }
     }
 
     private void delete(MongoCollection<Document> collection, String delete) {
          DeleteResult deleteResult = collection.deleteOne(or(
-                                        eq("username", delete),
-                                        eq("email", delete),
+                                        eq("name", delete),
                                         eq("_id", delete)));
                                 if (deleteResult.getDeletedCount() > 0) {
-                                    System.out.println("user deleted successfully!");
+                                    System.out.println("game deleted successfully!");
                                 } else {
-                                    System.out.println("No user deleted.");
+                                    System.out.println("No game deleted.");
                                 }
     }
 
     private void update(MongoCollection<Document> collection, String update, Document updateDoc){
             UpdateResult updateResult = collection.updateOne(
-                    or(eq("surname", update), eq("firstname", update)),
+                    or(eq("name", update), eq("price", update)),
                     new Document("$set", updateDoc));
 
             if (updateResult.getModifiedCount() > 0) {
-                System.out.println("user updated successfully!");
+                System.out.println("game updated successfully!");
             } else {
-                System.out.println("No user found.");
+                System.out.println("No game found.");
             }
     }
 }
