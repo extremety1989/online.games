@@ -17,14 +17,16 @@ import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
-import com.mongodb.client.MongoDatabase;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class User {
 
-    public void run(MongoCollection<Document> collection, Scanner scanner, MongoDatabase database){
+    public void run(Scanner scanner, MongoDatabase database){
                         // Users management
                         boolean sub_exit = false;
 
@@ -38,6 +40,8 @@ public class User {
                             System.out.println("4: Delete user");
                             System.out.println("5: List All users");
                             System.out.println("6: Purchase a game");
+                            System.out.println("7: Create a comment");
+                            System.out.println("8: Create a rating");
                             System.out.println("0: Return to main menu");
                             System.out.print("Enter option: ");
 
@@ -47,8 +51,8 @@ public class User {
                             if (sub_option == 1) {
 
                         
-                                System.out.print("Enter surname: ");
-                                String surname = scanner.nextLine();
+                                System.out.print("Enter lastname: ");
+                                String lastname = scanner.nextLine();
                                 System.out.print("Enter firstname: ");
                                 String firstname = scanner.nextLine();
                                 System.out.print("Enter age: ");
@@ -60,37 +64,43 @@ public class User {
                                 String username = scanner.nextLine();
                                 System.out.print("Enter password: ");
                                 String password = scanner.nextLine();
-                                this.create(database.getCollection("users"), surname, firstname, age, email, username, password);
+                                this.create(database, 
+                                lastname, firstname, age, email, username, password);
                             
                             } else if (sub_option == 2) {
 
                         
                                 System.out.print("Enter user_id, username or email to find: ");
-                                String username_or_email = scanner.nextLine();
-                                this.find(collection, database, username_or_email);
+                                String id_or_username_or_email = scanner.nextLine();
+                                this.find(database, id_or_username_or_email);
 
                             } else if (sub_option == 3) {
 
                            
                                 System.out.print(
-                                        "Enter surname or firstname of user to update (or press enter to skip): ");
+                                        "Enter lastname or firstname of user to update (or press enter to skip): ");
                                 Document updateDoc = new Document();
                                 String update = scanner.nextLine();
 
-                                System.out.print("Enter new surname: ");
-                                String newSurname = scanner.nextLine();
+                                System.out.print("Enter new lastname: ");
+                                String newlastname = scanner.nextLine();
                                 System.out.print("Enter new firstname: ");
                                 String newFirstname = scanner.nextLine();
                                 System.out.print("Enter new age: ");
                                 int newAge = 0;
                                 String ageInput = scanner.nextLine();
+                                System.out.print("Enter new email: ");
+                                String newEmail = scanner.nextLine();
+        
+                                System.out.print("Enter new password: ");
+                                String newPassword = scanner.nextLine();
 
                                 if (!ageInput.isEmpty()) {
                                     newAge = Integer.parseInt(ageInput);
                                 }
 
-                                if (!newSurname.isEmpty()) {
-                                    updateDoc.append("surname", newSurname);
+                                if (!newlastname.isEmpty()) {
+                                    updateDoc.append("lastname", newlastname);
                                 }
 
                                 if (!newFirstname.isEmpty()) {
@@ -101,20 +111,36 @@ public class User {
                                     updateDoc.append("age", newAge);
                                 }
 
+                                if (!newEmail.isEmpty()) {
+                                    updateDoc.append("email", newEmail);
+                                }
+
+                                if (!newPassword.isEmpty()) {
+                                    MessageDigest messageDigest;
+                                    try {
+                                        messageDigest = MessageDigest.getInstance("SHA-256");
+                                        messageDigest.update(newPassword.getBytes());
+                                        String passwordHash = new String(messageDigest.digest());
+                                        updateDoc.append("password", passwordHash);
+                                    } catch (NoSuchAlgorithmException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
                                 if (!updateDoc.isEmpty()) {
-                                    this.update(collection, update, updateDoc);
+                                    this.update(database, update, updateDoc);
                                 }
                  
                             } else if (sub_option == 4) {
                              
                                 System.out.print("Enter id, username or email of user to delete: ");
                                 String delete = scanner.nextLine();
-                                this.delete(collection, delete);
+                                this.delete(database, delete);
                              
                             } else if (sub_option == 5) {
                                 System.out.println("\n");
                                 int pageSize = 5;
-                                long totalDocuments = collection.countDocuments();
+                                long totalDocuments = database.getCollection("users").countDocuments();
                                 int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
                                 System.out.printf("Total users: %d\n", totalDocuments);
                                 if (totalPages == 0) {
@@ -126,16 +152,16 @@ public class User {
                                     while (paginating) {
                                        
                                         System.out.println("\n");
-                                        System.out.printf("%-29s %-20s %-20s %-5s\n", "Id", "Surname", "Firstname", "Age");
+                                        System.out.printf("%-29s %-20s %-20s %-5s %-30s %-20s\n", "Id", "lastname", "Firstname", "Age", "Email", "Username");
                                         System.out.println(
-                                                "----------------------------------------------------------------------------");
+                                                "------------------------------------------------------------------------------------------------------");
     
                                         int skipDocuments = (currentPage - 1) * pageSize;
-                                        this.read(collection, skipDocuments, pageSize);
+                                        this.read(database, skipDocuments, pageSize);
     
                                         // Pagination controls
                                         System.out.println(
-                                                "----------------------------------------------------------------------------");
+                                                "------------------------------------------------------------------------------------------------------");
                                         System.out.print("\n");
                                         System.out.printf("Page %d of %d\n", currentPage, totalPages);
                                         System.out.print("\n");
@@ -170,30 +196,50 @@ public class User {
                                     }
                                 }
                             } 
+
                             else if (sub_option == 6) {
-                                System.out.print("Enter username or email: ");
-                                String username_or_email = scanner.nextLine();
-                                System.out.print("Enter the game-name that he wants to purchase: ");
-                                String gameName = scanner.nextLine();
-                                System.out.println("Enter bank number: ");
-                                System.out.println("Enter amount: ");
-                                Double amount = scanner.nextDouble();
-                                if (amount < 0) {
-                                    System.out.println("Invalid amount. Please try again.");
+                                System.out.print("Enter user-id or username or email: ");
+                                String id_or_username_or_email = scanner.nextLine();
+                                System.out.print("Enter the game-name or game-id that he wants to purchase: ");
+                                String gameName_or_gameId = scanner.nextLine();
+
+                                List<String> bankNames = Arrays.asList(
+                                    "Bank of America",
+                                    "JPMorgan Chase",
+                                    "Wells Fargo",
+                                    "Citigroup",
+                                    "Goldman Sachs",
+                                    "Morgan Stanley",
+                                    "HSBC",
+                                    "Barclays",
+                                    "Royal Bank of Canada",
+                                    "BNP Paribas"
+                                );
+
+                                System.out.println("Enter bank (0 to skip): ");
+                                System.out.println("[1] Bank of America");
+                                System.out.println("[2] JPMorgan Chase");
+                                System.out.println("[3] Wells Fargo");
+                                System.out.println("[4] Citigroup");
+                                System.out.println("[5] Goldman Sachs");
+                                System.out.println("[6] Morgan Stanley");
+                                System.out.println("[7] HSBC");
+                                System.out.println("[8] Barclays");
+                                System.out.println("[9] Royal Bank of Canada");
+                                System.out.println("[10] BNP Paribas");
+                          
+                                int bankChoice = scanner.nextInt();
+                                if(bankChoice > 10){
+                                    System.out.println("Invalid choice. Please try again.");
                                     break;
                                 }
-                                System.out.println("Enter a currency US or EUR: ");
-                                String currency = scanner.nextLine();
-                                this.purchaseAGame(collection, database, username_or_email, gameName, amount, currency);
-                            }
-                            else if (sub_option == 7) {
-                                System.out.print("Enter username or email (enter to skip): ");
-                                String username_or_email = scanner.nextLine();
-                                System.out.print("Enter the game that he wants to purchase: ");
-                                String gameName = scanner.nextLine();
-                                System.out.println("Enter bank number: ");
+                                if(bankChoice != 0){
+                                  
+                                }
+                                String bankName = bankNames.get(bankChoice - 1);
+                                System.out.println("Enter bank number (enter to skip): ");
                                 Integer bankNumber = scanner.nextInt();
-                                if (bankNumber < 0 || bankNumber > 999999999999L) {
+                                if (bankNumber != null && (bankNumber < 0 || bankNumber > 999999999999L)) {
                                     System.out.println("Invalid bank number. Please try again.");
                                     break;
                                 }
@@ -205,7 +251,7 @@ public class User {
                                 }
                                 System.out.println("Enter a currency US or EUR: ");
                                 String currency = scanner.nextLine();
-                                this.purchaseAGameWithCard(collection, database, username_or_email, gameName, bankNumber, amount, currency);
+                                this.purchaseAGame(database, id_or_username_or_email, gameName_or_gameId, bankName, bankNumber, amount, currency);
                             }
                             else if (sub_option == 0) {
                                 sub_exit = true;
@@ -217,112 +263,82 @@ public class User {
                         }
     }
 
-    private void create(MongoCollection<Document> collection, String surname, String firstname, Integer age, 
+    private void create(MongoDatabase database, String lastname, String firstname, Integer age, 
         String email, String username, String password){
-        if (surname.isEmpty() || firstname.isEmpty() || age == null || email.isEmpty() || username.isEmpty() || password.isEmpty()) {
+        if (lastname.isEmpty() || firstname.isEmpty() || age == null || email.isEmpty() || username.isEmpty() || password.isEmpty()) {
             System.out.println("Please enter all fields.");
             return;
         }
-        Document newuser = new Document()
-        .append("surname", surname)
-        .append("firstname", firstname)
-        .append("age", age)
-        .append("email", email)
-        .append("username", username)
-        .append("password", password)
-        .append("games", new ArrayList<>())
-        .append("comments", new ArrayList<>())
-        .append("ratings", new ArrayList<>())
-        .append("purchases", new ArrayList<>());
-
-
-        collection.insertOne(newuser);
-        System.out.println("user created successfully!");
+        MessageDigest messageDigest;
+        try {
+            messageDigest = MessageDigest.getInstance("SHA-256");
+            messageDigest.update(password.getBytes());
+            String passwordHash = new String(messageDigest.digest());
+            Document newuser = new Document()
+                .append("lastname", lastname)
+                .append("firstname", firstname)
+                .append("age", age)
+                .append("email", email)
+                .append("username", username)
+                .append("password", passwordHash);
+            database.getCollection("users").createIndex(
+                new Document("username", 1).append("email", 1).append("_id", 1).append("firstname", 1).append("lastname", 1), 
+                new IndexOptions().unique(true));
+            database.getCollection("users").insertOne(newuser);
+            System.out.println("user created successfully!");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
     }
 
-    private void createMany(MongoCollection<Document> collection, ArrayList<Document> users) {
-        collection.insertMany(users);
+    private void createMany(MongoDatabase database, ArrayList<Document> users) {
+        database.getCollection("users").insertMany(users);
         System.out.println("Users created successfully!");
     }
 
-    private void purchaseAGame(MongoCollection<Document> collection, 
-    MongoDatabase database,
-    String username_or_email, String gameName, Double amount, String currency){
-       Document found_user = collection.find(
-           or(
-               eq("username", username_or_email),
-               eq("email", username_or_email)
-           )
-           ).first();
-       if (found_user != null) {
-               Document found_game = collection.find(
-                   eq("name", gameName)
-               ).first();
-               if (found_game != null) {
-                   if ((int) found_user.get("age") >= (int) found_game.get("age_restriction")) {
 
-                       Document new_purchase = new Document()
-                       .append("amount", amount)
-                       .append("currency", currency)
-                       .append("date",  new Date());
-                       InsertOneResult result = database.getCollection("purchases").insertOne(new_purchase);
-                       if (result.wasAcknowledged()) {
-                         
-                            collection.updateOne(
-                                eq("_id", found_user.get("_id")),
-                                new Document("$push", new Document("purchases",
+    private void purchaseAGame(MongoDatabase database, 
+      String id_or_username_or_email, String gameName_or_gameId,
+      String bankName, Integer bankNumber, Double amount, String currency){
 
-                                    new Document("purchase_id", new_purchase.get("_id"))
-                                        .append("game_id", found_game.get("_id"))
-                                ))
-                            );
-
-                       } else {
-                           System.out.println("Purchase not created.");
-                       }
-                  
-
-                   }else {
-                       System.out.println("not old enough to buy this game.");
-                   }
-               } else {
-                   System.out.println("Game not found.");
-               }
-       } else {
-           System.out.println("user not found.");
-       }
-   }
-
-    private void purchaseAGameWithCard(MongoCollection<Document> collection, MongoDatabase database, String username_or_email, String gameName,
-      Integer bankNumber, Double amount, String currency){
-        Document found_user = collection.find(
+        Document found_user = database.getCollection("users").find(
             or(
-                eq("username", username_or_email),
-                eq("email", username_or_email)
+                eq("_id", id_or_username_or_email),
+                eq("username", id_or_username_or_email),
+                eq("email", id_or_username_or_email)
             )
             ).first();
+
         if (found_user != null) {
-            Document found_game = collection.find(
-                    eq("name", gameName)
+
+            Document found_game = database.getCollection("games").find(
+                  or(  
+                    eq("_id", gameName_or_gameId),
+                    eq("name", gameName_or_gameId)
+                  )
                 ).first();
                 if (found_game != null) {
                     if ((int) found_user.get("age") >= (int) found_game.get("age_restriction")) {
+                        
+                        Document new_purchase = new Document();
 
-                        Document new_purchase = new Document()
-                        .append("amount", amount)
-                        .append("currency", currency)
-                        .append("number", bankNumber)
-                        .append("date",  new Date());
-                        InsertOneResult result = collection.insertOne(new_purchase);
+                        new_purchase.append("amount", amount)
+                        .append("currency", currency);
+                        if(bankName != null && bankNumber != null){
+                            new_purchase.append("bank", new Document()
+                            .append("name", bankName)
+                            .append("number", bankNumber));
+                        }
+                 
+              
+                        new_purchase.append("date",  new Date())
+                        .append("user_id", found_user.get("_id"))
+                        .append("game_id", found_game.get("_id"));
+                      
+                        InsertOneResult result = database.getCollection("purchases").insertOne(new_purchase);
+
                         if (result.wasAcknowledged()) {
-                            collection.updateOne(
-                                eq("_id", found_user.get("_id")),
-                                new Document("$push", new Document("purchases",
-
-                                    new Document("purchase_id", new_purchase.get("_id"))
-                                        .append("game_id", found_game.get("_id"))
-                                ))
-                            );
+                            System.out.println("Transaction created successfully!");
                         } else {
                             System.out.println("Transaction not created.");
                         }
@@ -331,23 +347,25 @@ public class User {
                     }else {
                         System.out.println("not old enough to buy this game.");
                     }
+
                 } else {
                     System.out.println("Game not found.");
                 }
+
         } else {
             System.out.println("user not found.");
         }
     }
 
-    private void read(MongoCollection<Document> collection, int skipDocuments, int pageSize) {
-        FindIterable<Document> pageusers = collection.find()
+    private void read(MongoDatabase database, int skipDocuments, int pageSize) {
+        FindIterable<Document> pageusers = database.getCollection("users").find()
         .skip(skipDocuments)
         .limit(pageSize);
         for (Document user : pageusers) {
             Object id = user.get("_id");
-            System.out.printf("%-29s %-20s %-20s %-5d %-40s %-20s %-40s\n",
+            System.out.printf("%-29s %-20s %-20s %-5d %-40s %-20s %-20s\n",
                     id.toString(),
-                    user.getString("surname"),
+                    user.getString("lastname"),
                     user.getString("firstname"),
                     user.getInteger("age"),
                     user.getString("email"),
@@ -357,29 +375,34 @@ public class User {
         }
     }
 
-    private void find(MongoCollection<Document> collection, MongoDatabase database, String value){
-        Document found = collection.find(or(
+    private void find(MongoDatabase database, String value){
+        Document found = database.getCollection("users").find(or(
             eq("username", value),
             eq("email", value),
             eq("_id", value)
         )).first();
         if (found != null) {
-            System.out.println(found.getString("surname") + " " 
-            + found.getString("firstname") + " " + found.getInteger("age")
-            + " " + found.getString("email") + " " + found.getString("username")
-            + " " + found.getString("password")
-            + " " + database.getCollection("games").find(eq("user_id", found.get("_id")))
-            + " " + database.getCollection("comments").find(eq("user_id", found.get("_id")))
-            + " " + database.getCollection("ratings").find(eq("user_id", found.get("_id")))
-            + " " + database.getCollection("transactions").find(eq("user_id", found.get("_id")))
+            long totalComments = database.getCollection("comments").countDocuments(eq("user_id", found.get("_id")));
+            long totalRatings = database.getCollection("ratings").countDocuments(eq("user_id", found.get("_id")));
+            long totalPurchases = database.getCollection("purchases").countDocuments(eq("user_id", found.get("_id")));
+            System.out.println(
+            "Lastname: " + found.getString("lastname") 
+            + " Firstname: "  +  found.getString("firstname") 
+            + " Age: " + found.getInteger("age")
+            + " Email: " + found.getString("email") 
+            + " Username: " + found.getString("username")
+            + " Password: " + found.getString("password")
+            + " Total comments: " + totalComments
+            + " Total ratins: " + totalRatings
+            + " Total purchases: " + totalPurchases
             );
         } else {
             System.out.println("user not found.");
         }
     }
 
-    private void delete(MongoCollection<Document> collection, String delete) {
-         DeleteResult deleteResult = collection.deleteOne(or(
+    private void delete(MongoDatabase database, String delete) {
+         DeleteResult deleteResult = database.getCollection("users").deleteOne(or(
                                         eq("username", delete),
                                         eq("email", delete),
                                         eq("_id", delete)));
@@ -390,9 +413,13 @@ public class User {
                                 }
     }
 
-    private void update(MongoCollection<Document> collection, String update, Document updateDoc){
-            UpdateResult updateResult = collection.updateOne(
-                    or(eq("surname", update), eq("firstname", update)),
+    private void update(MongoDatabase database, String update, Document updateDoc){
+            UpdateResult updateResult = database.getCollection("users").updateOne(
+                    or(
+                        eq("_id", update), 
+                        eq("email", update);
+                        eq("username", update)
+                    ),
                     new Document("$set", updateDoc));
 
             if (updateResult.getModifiedCount() > 0) {

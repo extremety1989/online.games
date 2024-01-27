@@ -16,7 +16,7 @@ import com.mongodb.client.result.UpdateResult;
 
 public class Category {
 
-            public void run(MongoCollection<Document> collection, Scanner scanner, MongoDatabase database){
+            public void run(Scanner scanner, MongoDatabase database){
                        
                         boolean sub_exit = false;
 

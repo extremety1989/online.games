@@ -46,9 +46,13 @@ public class App {
 
                 Scanner scanner = new Scanner(System.in);
                 MongoDatabase database = mongoClient.getDatabase("online_games");
-                MongoCollection<Document> collection = database.getCollection("users");
+  
                 User user = new User();
                 Game game = new Game();
+                Category category = new Category();
+                Purchase purchase = new Purchase();
+                Comment comment = new Comment();
+                Rating rating = new Rating();
                 boolean exit = false;
                 while (!exit) {
                     System.out.println("\n");
@@ -58,176 +62,28 @@ public class App {
                     System.out.println("3: Users management");
                     System.out.println("4: Comments management");
                     System.out.println("5: Ratings management");
-                    System.out.println("6: Transactions management");
+                    System.out.println("6: Purchases management");
                     System.out.println("0: Exit");
                     System.out.print("Enter option: ");
                     int option = scanner.nextInt();
                     scanner.nextLine(); 
                     if (option == 1) {
-                        // Category management
-
-                        boolean sub_exit = false;
-
-                        while (!sub_exit) {
-                            System.out.println("\n");
-                            System.out.println("Choose an operation:");
-                            System.out.println("1: Create category");
-                            System.out.println("2: Read category");
-                            System.out.println("3: Update category");
-                            System.out.println("4: Delete category");
-                            System.out.println("5: List All categories");
-                            System.out.println("0: Return to main menu");
-                            System.out.print("Enter option: ");
-
-                            int sub_option = scanner.nextInt();
-                            scanner.nextLine(); 
-                            if (sub_option == 1){
-
-                            }
-                            else if (sub_option == 2) {
-
-                            }
-                            else if (sub_option == 3) {
-
-                            }
-                            else if (sub_option == 4) {
-
-                            }
-                            else if (sub_option == 5) {
-
-                            }
-                            else if (sub_option == 5) {
-                                
-                            }
-                            else if (sub_option == 0) {
-                                sub_exit = true;
-                                break;
-                            }
-                      }
+                       
+                        category.run(scanner, database);
                     } else if (option == 2) {
-                        // Games management
-                        game.run(collection, scanner, database);
+                  
+                        game.run(scanner, database);
                     } else if (option == 3) {
-                        user.run(collection, scanner, database);
+                    
+                        user.run(scanner, database);
                     }
 
                     else if (option == 4) {
-                        boolean sub_exit = false;
-
-                        while (!sub_exit) {
-                            System.out.println("\n");
-                            System.out.println("Choose an operation:");
-                            System.out.println("1: Create comment");
-                            System.out.println("2: Read comment");
-                            System.out.println("3: Update comment");
-                            System.out.println("4: Delete comment");
-                            System.out.println("5: List All comments");
-                            System.out.println("0: Return to main menu");
-                            System.out.print("Enter option: ");
-
-                            int sub_option = scanner.nextInt();
-                            scanner.nextLine(); 
-                            if (sub_option == 1){
-
-                            }
-                            else if (sub_option == 2) {
-
-                            }
-                            else if (sub_option == 3) {
-
-                            }
-                            else if (sub_option == 4) {
-
-                            }
-                            else if (sub_option == 5) {
-
-                            }
-                            else if (sub_option == 5) {
-                                
-                            }
-                            else if (sub_option == 0) {
-                                sub_exit = true;
-                                break;
-                            }
-                      }
+                      comment.run(scanner, database);
                     } else if (option == 5) {
-                        boolean sub_exit = false;
-
-                        while (!sub_exit) {
-                            System.out.println("\n");
-                            System.out.println("Choose an operation:");
-                            System.out.println("1: Create rating");
-                            System.out.println("2: Read rating");
-                            System.out.println("3: Update rating");
-                            System.out.println("4: Delete rating");
-                            System.out.println("5: List All ratings");
-                            System.out.println("0: Return to main menu");
-                            System.out.print("Enter option: ");
-
-                            int sub_option = scanner.nextInt();
-                            scanner.nextLine(); 
-                            if (sub_option == 1){
-
-                            }
-                            else if (sub_option == 2) {
-
-                            }
-                            else if (sub_option == 3) {
-
-                            }
-                            else if (sub_option == 4) {
-
-                            }
-                            else if (sub_option == 5) {
-
-                            }
-                            else if (sub_option == 5) {
-                                
-                            }
-                            else if (sub_option == 0) {
-                                sub_exit = true;
-                                break;
-                            }
-                      }
+                       rating.run(scanner, database);
                     } else if (option == 6) {
-                        boolean sub_exit = false;
-
-                        while (!sub_exit) {
-                            System.out.println("\n");
-                            System.out.println("Choose an operation:");
-                            System.out.println("1: Create transaction");
-                            System.out.println("2: Read transaction");
-                            System.out.println("3: Update transaction");
-                            System.out.println("4: Delete transaction");
-                            System.out.println("5: List All transactions");
-                            System.out.println("0: Return to main menu");
-                            System.out.print("Enter option: ");
-
-                            int sub_option = scanner.nextInt();
-                            scanner.nextLine(); 
-                            if (sub_option == 1){
-
-                            }
-                            else if (sub_option == 2) {
-
-                            }
-                            else if (sub_option == 3) {
-
-                            }
-                            else if (sub_option == 4) {
-
-                            }
-                            else if (sub_option == 5) {
-
-                            }
-                            else if (sub_option == 5) {
-                                
-                            }
-                            else if (sub_option == 0) {
-                                sub_exit = true;
-                                break;
-                            }
-                      }
+                       purchase.run(scanner, database);
                     } else if (option == 0) {
                         exit = true;
                         System.out.println("Exiting...");
