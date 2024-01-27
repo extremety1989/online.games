@@ -108,9 +108,8 @@ public class Purchase {
                     new_purchase.append("amount", amount)
                             .append("currency", currency);
                     if (bankName != null && bankNumber != null) {
-                        new_purchase.append("bank", new Document()
-                                .append("name", bankName)
-                                .append("number", bankNumber));
+                        new_purchase.append("bankName", bankName)
+                                .append("bankNumber", bankNumber);
                     }
 
                     new_purchase.append("date", new Date())
