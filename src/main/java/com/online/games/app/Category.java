@@ -9,8 +9,9 @@ import java.util.Scanner;
 import org.bson.Document;
 
 import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
+
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 
@@ -40,9 +41,9 @@ public class Category {
                                 System.out.print("Enter name: ");
                                 String name = scanner.nextLine();
                       
-                                this.create(database.getCollection("categories"), name);
+                                this.create(database, name);
                             
-                            }  else if (sub_option == 3) {
+                            }  else if (sub_option == 2) {
 
                          
                                 System.out.print(
@@ -58,73 +59,17 @@ public class Category {
                                 }
             
                                 if (!updateDoc.isEmpty()) {
-                                    this.update(collection, update, updateDoc);
+                                    this.update(database, update, updateDoc);
                                 }
                  
-                            } else if (sub_option == 4) {
+                            } else if (sub_option == 3) {
                               
                                 System.out.print("Enter id or name of category to delete: ");
                                 String delete = scanner.nextLine();
-                                this.delete(collection, delete);
+                                this.delete(database, delete);
                              
                             } else if (sub_option == 5) {
-                                System.out.println("\n");
-                                int pageSize = 5;
-                                long totalDocuments = collection.countDocuments();
-                                int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-                                System.out.printf("Total categories: %d\n", totalDocuments);
-                                if (totalPages == 0) {
-                                    System.out.println("No category found.");
-                                }else{
-                                    int currentPage = 1; // Start with page 1
-                                    boolean paginating = true;
-    
-                                    while (paginating) {
-                                       
-                                        System.out.println("\n");
-                                        System.out.printf("%-29s %-30s\n", "Id", "Name");
-                                        System.out.println(
-                                                "----------------------------------------------------------------------------");
-    
-                                        int skipDocuments = (currentPage - 1) * pageSize;
-                                        this.read(collection, skipDocuments, pageSize);
-    
-                                        // Pagination controls
-                                        System.out.println(
-                                                "----------------------------------------------------------------------------");
-                                        System.out.print("\n");
-                                        System.out.printf("Page %d of %d\n", currentPage, totalPages);
-                                        System.out.print("\n");
-                                        System.out.printf("n: Next page | p: Previous page | q: Quit\n");
-                                        System.out.print("\n");
-                                        System.out.print("Enter option: ");
-    
-                                        String paginationOption = scanner.nextLine();
-    
-                                        switch (paginationOption) {
-                                            case "n":
-                                                if (currentPage < totalPages) {
-                                                    currentPage++;
-                                                } else {
-                                                    System.out.println("You are on the last page.");
-                                                }
-                                                break;
-                                            case "p":
-                                                if (currentPage > 1) {
-                                                    currentPage--;
-                                                } else {
-                                                    System.out.println("You are on the first page.");
-                                                }
-                                                break;
-                                            case "q":
-                                                paginating = false;
-                                                break;
-                                            default:
-                                                System.out.println("Invalid option. Please try again.");
-                                                break;
-                                        }
-                                    }
-                                }
+                                this.read(scanner, database);
                             } 
                             else if (sub_option == 0) {
                                 sub_exit = true;
@@ -135,7 +80,7 @@ public class Category {
                             }
                         }
     }
-        private void create(MongoCollection<Document> collection, String name){
+    private void create(MongoDatabase database, String name){
         if (name.isEmpty()) {
             System.out.println("Please enter the field.");
             return;
@@ -143,26 +88,79 @@ public class Category {
 
         Document category = new Document()
         .append("name", name);
-
-        collection.insertOne(category);
-        System.out.println("game created successfully!");
+        database.getCollection("categories").createIndex(
+            new Document("name", 1).append("_id", 1),
+            new IndexOptions().unique(true));
+        database.getCollection("categories").insertOne(category);
+        System.out.println("category created successfully!");
     }
 
-    private void read(MongoCollection<Document> collection, int skipDocuments, int pageSize) {
-        FindIterable<Document> pagegames = collection.find()
-        .skip(skipDocuments)
-        .limit(pageSize);
-        for (Document game : pagegames) {
-            Object id = game.get("_id");
-            System.out.printf("%-30s %-5d\n",
-                    id.toString(),
-                    game.getString("name"),
-                    game.getString("price"));
+    private void read(Scanner scanner, MongoDatabase database){ {
+        System.out.println("\n");
+        int pageSize = 5;
+        long totalDocuments = database.getCollection("categories").countDocuments();
+        int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
+        System.out.printf("Total categories: %d\n", totalDocuments);
+        if (totalPages == 0) {
+            System.out.println("No category found.");
+        }else{
+            int currentPage = 1; // Start with page 1
+            boolean paginating = true;
+
+            while (paginating) {
+               
+                System.out.println("\n");
+                System.out.printf("%-29s %-30s\n", "Id", "Name");
+                System.out.println(
+                        "----------------------------------------------------------------------------");
+
+                int skipDocuments = (currentPage - 1) * pageSize;
+                FindIterable<Document> categories = database.getCollection("categories").find().skip(skipDocuments).limit(pageSize);
+
+                for (Document category : categories) {
+                    System.out.printf("%-30s %-30s\n", category.get("_id"), category.get("name"));
+                }
+                // Pagination controls
+                System.out.println(
+                        "----------------------------------------------------------------------------");
+                System.out.print("\n");
+                System.out.printf("Page %d of %d\n", currentPage, totalPages);
+                System.out.print("\n");
+                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
+                System.out.print("\n");
+                System.out.print("Enter option: ");
+
+                String paginationOption = scanner.nextLine();
+
+                switch (paginationOption) {
+                    case "n":
+                        if (currentPage < totalPages) {
+                            currentPage++;
+                        } else {
+                            System.out.println("You are on the last page.");
+                        }
+                        break;
+                    case "p":
+                        if (currentPage > 1) {
+                            currentPage--;
+                        } else {
+                            System.out.println("You are on the first page.");
+                        }
+                        break;
+                    case "q":
+                        paginating = false;
+                        break;
+                    default:
+                        System.out.println("Invalid option. Please try again.");
+                        break;
+                }
+            }
+        }
         }
     }
 
-    private void delete(MongoCollection<Document> collection, String delete) {
-         DeleteResult deleteResult = collection.deleteOne(or(
+    private void delete(MongoDatabase database, String delete) {
+         DeleteResult deleteResult = database.getCollection("categories").deleteOne(or(
                                         eq("name", delete),
                                         eq("_id", delete)));
                                 if (deleteResult.getDeletedCount() > 0) {
@@ -172,8 +170,8 @@ public class Category {
                                 }
     }
 
-    private void update(MongoCollection<Document> collection, String update, Document updateDoc){
-            UpdateResult updateResult = collection.updateOne(
+    private void update(MongoDatabase database, String update, Document updateDoc){
+            UpdateResult updateResult = database.getCollection("categories").updateOne(
                     or(eq("name", update), eq("price", update)),
                     new Document("$set", updateDoc));
 

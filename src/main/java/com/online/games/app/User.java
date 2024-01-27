@@ -39,9 +39,6 @@ public class User {
                             System.out.println("3: Update user");
                             System.out.println("4: Delete user");
                             System.out.println("5: List All users");
-                            System.out.println("6: Purchase a game");
-                            System.out.println("7: Create a comment");
-                            System.out.println("8: Create a rating");
                             System.out.println("0: Return to main menu");
                             System.out.print("Enter option: ");
 
@@ -197,62 +194,7 @@ public class User {
                                 }
                             } 
 
-                            else if (sub_option == 6) {
-                                System.out.print("Enter user-id or username or email: ");
-                                String id_or_username_or_email = scanner.nextLine();
-                                System.out.print("Enter the game-name or game-id that he wants to purchase: ");
-                                String gameName_or_gameId = scanner.nextLine();
 
-                                List<String> bankNames = Arrays.asList(
-                                    "Bank of America",
-                                    "JPMorgan Chase",
-                                    "Wells Fargo",
-                                    "Citigroup",
-                                    "Goldman Sachs",
-                                    "Morgan Stanley",
-                                    "HSBC",
-                                    "Barclays",
-                                    "Royal Bank of Canada",
-                                    "BNP Paribas"
-                                );
-
-                                System.out.println("Enter bank (0 to skip): ");
-                                System.out.println("[1] Bank of America");
-                                System.out.println("[2] JPMorgan Chase");
-                                System.out.println("[3] Wells Fargo");
-                                System.out.println("[4] Citigroup");
-                                System.out.println("[5] Goldman Sachs");
-                                System.out.println("[6] Morgan Stanley");
-                                System.out.println("[7] HSBC");
-                                System.out.println("[8] Barclays");
-                                System.out.println("[9] Royal Bank of Canada");
-                                System.out.println("[10] BNP Paribas");
-                          
-                                int bankChoice = scanner.nextInt();
-                                if(bankChoice > 10){
-                                    System.out.println("Invalid choice. Please try again.");
-                                    break;
-                                }
-                                if(bankChoice != 0){
-                                  
-                                }
-                                String bankName = bankNames.get(bankChoice - 1);
-                                System.out.println("Enter bank number (enter to skip): ");
-                                Integer bankNumber = scanner.nextInt();
-                                if (bankNumber != null && (bankNumber < 0 || bankNumber > 999999999999L)) {
-                                    System.out.println("Invalid bank number. Please try again.");
-                                    break;
-                                }
-                                System.out.println("Enter amount: ");
-                                Double amount = scanner.nextDouble();
-                                if (amount < 0) {
-                                    System.out.println("Invalid amount. Please try again.");
-                                    break;
-                                }
-                                System.out.println("Enter a currency US or EUR: ");
-                                String currency = scanner.nextLine();
-                                this.purchaseAGame(database, id_or_username_or_email, gameName_or_gameId, bankName, bankNumber, amount, currency);
-                            }
                             else if (sub_option == 0) {
                                 sub_exit = true;
                                 break;
@@ -291,71 +233,8 @@ public class User {
         }
     }
 
-    private void createMany(MongoDatabase database, ArrayList<Document> users) {
-        database.getCollection("users").insertMany(users);
-        System.out.println("Users created successfully!");
-    }
 
 
-    private void purchaseAGame(MongoDatabase database, 
-      String id_or_username_or_email, String gameName_or_gameId,
-      String bankName, Integer bankNumber, Double amount, String currency){
-
-        Document found_user = database.getCollection("users").find(
-            or(
-                eq("_id", id_or_username_or_email),
-                eq("username", id_or_username_or_email),
-                eq("email", id_or_username_or_email)
-            )
-            ).first();
-
-        if (found_user != null) {
-
-            Document found_game = database.getCollection("games").find(
-                  or(  
-                    eq("_id", gameName_or_gameId),
-                    eq("name", gameName_or_gameId)
-                  )
-                ).first();
-                if (found_game != null) {
-                    if ((int) found_user.get("age") >= (int) found_game.get("age_restriction")) {
-                        
-                        Document new_purchase = new Document();
-
-                        new_purchase.append("amount", amount)
-                        .append("currency", currency);
-                        if(bankName != null && bankNumber != null){
-                            new_purchase.append("bank", new Document()
-                            .append("name", bankName)
-                            .append("number", bankNumber));
-                        }
-                 
-              
-                        new_purchase.append("date",  new Date())
-                        .append("user_id", found_user.get("_id"))
-                        .append("game_id", found_game.get("_id"));
-                      
-                        InsertOneResult result = database.getCollection("purchases").insertOne(new_purchase);
-
-                        if (result.wasAcknowledged()) {
-                            System.out.println("Transaction created successfully!");
-                        } else {
-                            System.out.println("Transaction not created.");
-                        }
-                   
-
-                    }else {
-                        System.out.println("not old enough to buy this game.");
-                    }
-
-                } else {
-                    System.out.println("Game not found.");
-                }
-
-        } else {
-            System.out.println("user not found.");
-        }
-    }
 
     private void read(MongoDatabase database, int skipDocuments, int pageSize) {
         FindIterable<Document> pageusers = database.getCollection("users").find()

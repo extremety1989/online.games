@@ -53,6 +53,8 @@ public class App {
                 Purchase purchase = new Purchase();
                 Comment comment = new Comment();
                 Rating rating = new Rating();
+                BulkData bulkData = new BulkData();
+
                 boolean exit = false;
                 while (!exit) {
                     System.out.println("\n");
@@ -63,6 +65,7 @@ public class App {
                     System.out.println("4: Comments management");
                     System.out.println("5: Ratings management");
                     System.out.println("6: Purchases management");
+                    System.out.println("7: Bulk mongodb");
                     System.out.println("0: Exit");
                     System.out.print("Enter option: ");
                     int option = scanner.nextInt();
@@ -84,7 +87,11 @@ public class App {
                        rating.run(scanner, database);
                     } else if (option == 6) {
                        purchase.run(scanner, database);
-                    } else if (option == 0) {
+                    } else if (option == 7) {
+                        bulkData.createMock(database);
+                    }
+                    
+                    else if (option == 0) {
                         exit = true;
                         System.out.println("Exiting...");
                         break;
