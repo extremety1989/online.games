@@ -157,9 +157,7 @@ public class Game {
             System.out.println("Invalid choice. Please try again.");
             return;
         }
-        if (bankChoice != 0) {
 
-        }
         String bankName = bankNames.get(bankChoice - 1);
         System.out.println("Enter bank number (enter to skip): ");
         Integer bankNumber = scanner.nextInt();

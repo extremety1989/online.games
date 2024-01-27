@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 import java.util.List;
 
+import javax.print.Doc;
 
 import org.bson.Document;
 
@@ -169,7 +170,6 @@ public class BulkData {
 
     public void createMock(MongoDatabase database) {
         this.createMockCategory(database);
-        this.createMockGame(database);
         this.createMockUser(database);
     }
 
@@ -184,21 +184,23 @@ public class BulkData {
             new Document("name", 1).append("_id", 1),
             new IndexOptions().unique(true));
         database.getCollection("categories").insertMany(categories);
+        this.createMockGame(database, categories);
     }
 
-    public void createMockGame(MongoDatabase database) {
+    public void createMockGame(MongoDatabase database, List<Document> categories) {
         Faker faker = new Faker();
         List <Document> games = new ArrayList<Document>();
-
-        for (int i = 0; i < gameNames.size(); i++) {
-            String name = gameNames.get(i);
-            String categoryName = categoryNames.get(faker.random().nextInt(categoryNames.size()));
-            Double price = prices.get(faker.random().nextInt(prices.size()));
-            Integer ageLimit = faker.number().numberBetween(9, 18);
-            Document game = new Document().append("name", name).append("categoryName", categoryName).append("price", price)
-                    .append("ageLimit", ageLimit);
-            games.add(game);
+        for (Document category : categories) {
+                for (int i = 0; i < 10; i++) {
+                    String name = gameNames.get(faker.random().nextInt(gameNames.size()) + 1);
+                    Double price = prices.get(faker.random().nextInt(prices.size()));
+                    Integer ageLimit = faker.number().numberBetween(9, 18);
+                    Document game = new Document().append("name", name).append("category", category).append("price", price)
+                            .append("ageLimit", ageLimit);
+                    games.add(game);
+                }
         }
+ 
         database.getCollection("games").createIndex(
             new Document("name", 1).append("_id", 1),
             new IndexOptions().unique(true));
