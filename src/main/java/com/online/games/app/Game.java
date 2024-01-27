@@ -10,18 +10,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 
-import javax.print.Doc;
-
 import org.bson.Document;
 
 import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
-import com.mongodb.client.result.UpdateResult;
-import com.mongodb.internal.operation.FindAndUpdateOperation;
+
 
 public class Game {
 

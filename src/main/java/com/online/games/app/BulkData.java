@@ -3,11 +3,9 @@ package com.online.games.app;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
 
-import javax.print.Doc;
+import java.util.List;
+
 
 import org.bson.Document;
 
@@ -168,7 +166,7 @@ public class BulkData {
             49.99,
             59.99
         );
-        
+
     public void createMock(MongoDatabase database) {
         this.createMockCategory(database);
         this.createMockGame(database);

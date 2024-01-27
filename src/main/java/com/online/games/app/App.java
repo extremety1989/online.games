@@ -3,22 +3,12 @@ package com.online.games.app;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoException;
-import com.mongodb.ServerApi;
-import com.mongodb.ServerApiVersion;
-import com.mongodb.client.FindIterable;
+
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
+
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Collation;
-import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.UpdateResult;
 
-import org.bson.Document;
-import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.Filters.or;
-
-import java.util.ArrayList;
 import java.util.Scanner;
 
 public class App {
