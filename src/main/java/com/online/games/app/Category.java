@@ -68,7 +68,7 @@ public class Category {
                                 String delete = scanner.nextLine();
                                 this.delete(database, delete);
                              
-                            } else if (sub_option == 5) {
+                            } else if (sub_option == 4) {
                                 this.read(scanner, database);
                             } 
                             else if (sub_option == 0) {
