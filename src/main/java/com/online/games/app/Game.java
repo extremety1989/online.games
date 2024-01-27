@@ -43,8 +43,11 @@ public class Game {
                       
                                 System.out.print("Enter price: ");
                                 Double price = scanner.nextDouble();
+
+                                System.out.print("Enter age limit: ");
+                                Integer age_limit = scanner.nextInt();
                                 scanner.nextLine(); 
-                                this.create(database.getCollection("games"), name, price);
+                                this.create(database.getCollection("games"), name, age_limit, price);
                             
                             } else if (sub_option == 2) {
 
@@ -160,7 +163,7 @@ public class Game {
                             }
                         }
     }
-        private void create(MongoCollection<Document> collection, String name, Double price){
+        private void create(MongoCollection<Document> collection, String name, Integer age_restriction, Double price){
         if (name.isEmpty() || price == null) {
             System.out.println("Please enter all fields.");
             return;
@@ -168,7 +171,8 @@ public class Game {
 
         Document newgame = new Document()
         .append("name", name)
-        .append("price", price);
+        .append("price", price)
+        .append("age_restriction", age_restriction);
 
         collection.insertOne(newgame);
         System.out.println("game created successfully!");
@@ -179,11 +183,27 @@ public class Game {
         .skip(skipDocuments)
         .limit(pageSize);
         for (Document game : pagegames) {
-            Object id = game.get("_id");
-            System.out.printf("%-30s %-5d\n",
-                    id.toString(),
+            System.out.printf("%-30s %-5d %-40s %-2i\n",
+                game.getString("name"),
+                game.getString("price"),
+                game.getString("category"),
+                game.getString("age_restriction")
+            );
+        }
+    }
+
+    private void findGameBasedOnCategory(MongoCollection<Document> collection, String category, int skipDocuments, int pageSize) {
+        FindIterable<Document> pagegames = collection.find(eq("category", category))
+        .skip(skipDocuments)
+        .limit(pageSize);
+        for (Document game : pagegames) {
+ 
+            System.out.printf("%-30s %-5d %-40s %-2i\n",
                     game.getString("name"),
-                    game.getString("price"));
+                    game.getString("price"),
+                    game.getString("category"),
+                    game.getString("age_restriction")
+                    );
         }
     }
 

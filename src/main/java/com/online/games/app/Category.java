@@ -25,10 +25,9 @@ public class Category {
                             System.out.println("\n");
                             System.out.println("Choose an operation:");
                             System.out.println("1: Create category");
-                            System.out.println("2: Read category");
-                            System.out.println("3: Update category");
-                            System.out.println("4: Delete category");
-                            System.out.println("5: List All categories");
+                            System.out.println("2: Update category");
+                            System.out.println("3: Delete category");
+                            System.out.println("4: List All categories");
                             System.out.println("0: Return to main menu");
                             System.out.print("Enter option: ");
 
@@ -37,25 +36,13 @@ public class Category {
 
                             if (sub_option == 1) {
 
-                                // Create a new user
+              
                                 System.out.print("Enter name: ");
                                 String name = scanner.nextLine();
                       
                                 this.create(database.getCollection("categories"), name);
                             
-                            } else if (sub_option == 2) {
-
-                                // Read a user
-                                System.out.print("Enter name to find: ");
-                                String name = scanner.nextLine();
-                                Document found = collection.find(eq("name", name)).first();
-                                if (found != null) {
-                                    System.out.println("Name: " + found.getString("name"));
-                                } else {
-                                    System.out.println("category not found.");
-                                }
-
-                            } else if (sub_option == 3) {
+                            }  else if (sub_option == 3) {
 
                          
                                 System.out.print(
@@ -75,7 +62,7 @@ public class Category {
                                 }
                  
                             } else if (sub_option == 4) {
-                                // Delete a game
+                              
                                 System.out.print("Enter id or name of category to delete: ");
                                 String delete = scanner.nextLine();
                                 this.delete(collection, delete);
