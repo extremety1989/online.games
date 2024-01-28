@@ -3,23 +3,19 @@ package com.online.games.app;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.or;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Scanner;
 
-import javax.xml.crypto.Data;
 
 import org.bson.Document;
 
-import com.mongodb.client.AggregateIterable;
+
 import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
+
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertOneResult;
+
 import com.mongodb.client.result.UpdateResult;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
