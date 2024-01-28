@@ -9,6 +9,7 @@ import java.util.List;
 import javax.print.Doc;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import com.github.javafaker.Faker;
 import com.mongodb.client.MongoDatabase;
@@ -226,7 +227,7 @@ public class BulkData {
             String userName = faker.name().username();
             String password = faker.internet().password();
             Integer age = faker.number().numberBetween(14, 55);
-            Date date = faker.date().birthday();
+            Date date = new Date();
             Document user = new Document().append("firstname",
              firstName).append("lastname", lastName).append("email", email).append("age", age)
                     .append("username", userName).append("password", password).append("created_at", date);
@@ -237,35 +238,39 @@ public class BulkData {
                 new IndexOptions().unique(true));
 
         database.getCollection("users").insertMany(users);
-        // List <Document> games = database.getCollection("games").find().into(new ArrayList<Document>());
-        // this.createMockPurchase(database, users, games);
-        // this.createMockComment(database, users, games);
-        // this.createMockRating(database, users, games);
+        List <Document> games = database.getCollection("games").find().into(new ArrayList<Document>());
+        this.createMockPurchase(database, users, games);
+        this.createMockComment(database, users, games);
+        this.createMockRating(database, users, games);
     }
 
     public void createMockPurchase(MongoDatabase database, List<Document> users, List<Document> games) {
         List <Document> purchases = new ArrayList<Document>();
 
         for (Document user : users) {
-            for (int i = 0; i < 10; i++) {
-                Faker faker = new Faker();
-                String bankName = bankNames.get(faker.random().nextInt(bankNames.size()));
-                Integer bankNumber = faker.number().numberBetween(100000000, 999999999);
-                Double amout = faker.number().randomDouble(2, 1, 10000);
-                String currency = "EUR";
-                Document purchase = new Document();
-                purchase.append("created_at", faker.date().birthday());
-                Object user_id = user.get("_id");
-                purchase.append("created_at", faker.date().birthday());
-                purchase.append("user_id", user_id);
-                purchase.append("game_id", gameNames.get(faker.random().nextInt(games.size())))
-                .append("bank", new Document().append("name", bankName).append("number", bankNumber));
+            for (Document game: games){
+                for (int i = 0; i < 10; i++) {
+                    Faker faker = new Faker();
+                    String bankName = bankNames.get(faker.random().nextInt(bankNames.size()));
+                    Integer bankNumber = faker.number().numberBetween(100000000, 999999999);
+                    Double amout = faker.number().randomDouble(2, 1, 10000);
+                    String currency = "EUR";
+                    Document purchase = new Document();
+                
+                    Object user_id = user.get("_id");
+                    Object game_id = game.get("_id");
+                    purchase.append("created_at", new Date());
+                    purchase.append("user_id", user_id);
+                    purchase.append("game_id", game_id);
 
-                purchase.append("amount", amout)
-                .append("currency", currency);
-
-                purchases.add(purchase);
-            }   
+                    purchase.append("bank", new Document().append("name", bankName).append("number", bankNumber));
+    
+                    purchase.append("amount", amout)
+                    .append("currency", currency);
+    
+                    purchases.add(purchase);
+                }   
+            }
         }
 
         database.getCollection("purchases").insertMany(purchases);
@@ -275,17 +280,21 @@ public class BulkData {
         List <Document> comments = new ArrayList<Document>();
 
         for (Document user : users) {
-            for (int i = 0; i < 10; i++) {
-                Faker faker = new Faker();
-                String comment = faker.lorem().sentence();
-                Document commentDoc = new Document();
-                commentDoc.append("created_at", faker.date().birthday());
-                commentDoc.append("user_id", user.get("_id"));
-                commentDoc.append("game_id", gameNames.get(faker.random().nextInt(games.size())))
-                .append("comment", comment);
+            for (Document game : games) {
+                for (int i = 0; i < 10; i++) {
+                    Faker faker = new Faker();
+                    String comment = faker.lorem().sentence();
+                    Document commentDoc = new Document();
+                    commentDoc.append("created_at", new Date());
+                    ObjectId user_id = user.getObjectId("_id");
+                    ObjectId game_id = game.getObjectId("_id");
+                    commentDoc.append("user_id", user_id);
+                    commentDoc.append("game_id", game_id);
+                    commentDoc.append("comment", comment);
 
-                comments.add(commentDoc);
-            }   
+                    comments.add(commentDoc);
+                }  
+            }    
         }
 
         database.getCollection("comments").insertMany(comments);
@@ -299,7 +308,7 @@ public class BulkData {
                 Faker faker = new Faker();
                 Integer rating = faker.number().numberBetween(1, 5);
                 Document ratingDoc = new Document();
-                ratingDoc.append("created_at", faker.date().birthday());
+                ratingDoc.append("created_at", new Date());
                 ratingDoc.append("user_id", user.get("_id"));
                 ratingDoc.append("game_id", gameNames.get(faker.random().nextInt(games.size())))
                 .append("rating", rating);
