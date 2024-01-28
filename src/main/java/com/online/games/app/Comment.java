@@ -160,10 +160,10 @@ public class Comment {
                     Object id = p.get("_id");
                     System.out.printf("%-29s %-29s %-29s %-20s %-s\n",
                             id,
-                            p.getString("game_id"),
-                            p.getString("user_id"),
-                            p.getString("comment"),
-                            p.getString("created_at"));
+                            p.get("game_id"),
+                            p.get("user_id"),
+                            p.get("comment"),
+                            p.get("created_at"));
                 }
                 // Pagination controls
                 System.out.println(
@@ -234,8 +234,8 @@ public class Comment {
                             game_id,
                             user_id,
                         
-                            p.getString("comment"),
-                            p.getString("created_at"));
+                            p.get("comment"),
+                            p.get("created_at"));
                 }
 
                 // Pagination controls
@@ -343,10 +343,10 @@ public class Comment {
                     Object id = p.get("_id");
                     System.out.printf("%-29s %-20s %-20s %-5s\n",
                             id,
-                            p.getString("game_id"),
-                            p.getString("user_id"),
-                            p.getString("comment"),
-                            p.getString("created_at"));
+                            p.get("game_id"),
+                            p.get("user_id"),
+                            p.get("comment"),
+                            p.get("created_at"));
                 }
 
                 // Pagination controls

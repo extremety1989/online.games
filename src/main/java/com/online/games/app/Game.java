@@ -300,9 +300,9 @@ public class Game {
                     Document category = game.get("category", Document.class);
                     System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n",
                             id.toString(),
-                            game.getString("name"),
+                            game.get("name"),
                             game.getDouble("price"),
-                            category.getString("name"),
+                            category.get("name"),
                             game.getInteger("age_restriction"),
                             game.getInteger("total"));
                 }
@@ -379,9 +379,9 @@ public class Game {
                             Document category = game.get("category", Document.class);
                             System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n",
                                     id.toString(),
-                                    game.getString("name"),
+                                    game.get("name"),
                                     game.getDouble("price"),
-                                    category.getString("name"),
+                                    category.get("name"),
                                     game.getInteger("age_restriction"),
                                     game.getInteger("total"));
                         }
@@ -456,7 +456,7 @@ public class Game {
                             Object id = game.get("_id");
                             System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n",
                                     id.toString(),
-                                    game.getString("name"),
+                                    game.get("name"),
                                     game.getDouble("price"),
                                     category,
                                     game.getInteger("age_restriction"),
@@ -533,9 +533,9 @@ public class Game {
                             Document category = game.get("category", Document.class);
                             System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n",
                                     id.toString(),
-                                    game.getString("name"),
+                                    game.get("name"),
                                     game.getDouble("price"),
-                                    category.getString("name"),
+                                    category.get("name"),
                                     game.getInteger("age_restriction"),
                                     game.getInteger("total"));
                         }

@@ -327,7 +327,7 @@ public class Purchase {
                             temp.get("name"),
                             temp.get("number"),
                             p.getDouble("amount"),
-                            p.getString("currency"),
+                            p.get("currency"),
                             p.getDate("created_at"));
                 }
                 
@@ -403,12 +403,12 @@ public class Purchase {
                     Document temp = p.get("bank", Document.class);
                     System.out.printf("%-29s %-29s %-29s %-40s %-9i %-5s %-3s %-6s\n",
                             id.toString(),
-                            p.getString("user_id"),
-                            p.getString("game_id"),
+                            p.get("user_id"),
+                            p.get("game_id"),
                             temp.get("name"),
                             temp.get("number"),
                             p.getDouble("amount"),
-                            p.getString("currency"),
+                            p.get("currency"),
                             p.getDate("created_at"));
                 }
 
