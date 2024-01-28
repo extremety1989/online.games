@@ -309,30 +309,41 @@ public class Rating {
     }
 
     private void deleteAllByUsernameOrEmailOrGame(MongoDatabase database, String delete){
-        DeleteResult deleteResult;
-        Document found_user = database.getCollection("users").find(
-            or(
-                eq("username", delete),
-                eq("email", delete)
-            )
-        ).first();
-
-        Document found_game = null;
-        if (found_user == null) {
-            found_game = database.getCollection("games").find(
+        Document foundUser; 
+        if(isHexadecimal(delete)){
+            foundUser = database.getCollection("users").find(
+                or(
+                    eq("_id", delete)
+                )
+            ).first();
+        }else{
+            foundUser = database.getCollection("users").find(
+                or(
+                    eq("username", delete),
+                    eq("email", delete)
+                )
+            ).first();
+        }
+        Document foundGame;
+        if(isHexadecimal(delete)){
+            foundGame =  database.getCollection("games").find(
+                eq("_id", delete)
+            ).first();
+        }else{
+            foundGame =  database.getCollection("games").find(
                 eq("name", delete)
             ).first();
-            if (found_game == null) {
-                System.out.println("User or game not found.");
-                return;
-            }
         }
-        deleteResult = database.getCollection("ratings").deleteMany(
-            or(
-                eq("user_id", new ObjectId(found_user.get("_id").toString())),
-                eq("game_id", new ObjectId(found_game.get("_id").toString()))
-            )
-        );
+
+        DeleteResult deleteResult = null;
+        if (foundGame != null) {
+            deleteResult = database.getCollection("ratings").deleteMany( eq("game_id", new ObjectId(foundGame.get("_id").toString())));
+        } else if (foundUser != null) {
+            deleteResult = database.getCollection("ratings").deleteMany( eq("user_id", new ObjectId(foundUser.get("_id").toString())));
+        } else {
+            System.out.println("User or game not found.");
+            return;
+        }
          if (deleteResult.getDeletedCount() > 0) {
              System.out.println("ratings deleted successfully!");
          } else {

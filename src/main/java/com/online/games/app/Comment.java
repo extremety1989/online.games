@@ -35,9 +35,9 @@ public class Comment {
                             System.out.println("Choose an operation:");
                             System.out.println("1: Create comment");
                             System.out.println("2: Delete comment");
-                            System.out.println("3: Delete All comments by user-id or username or email");
+                            System.out.println("3: Delete All comments by user-id or username or email or game-id or game-name");
                             System.out.println("4: List All comments");
-                            System.out.println("5: List All comments by user or game");
+                            System.out.println("5: List All comments by username or email or game-name");
                             System.out.println("6: List All comments by date");
                           
                             System.out.println("0: Return to main menu");
@@ -422,31 +422,43 @@ public class Comment {
     }
 
     private void deleteByUserOrGame(MongoDatabase database, String delete){
-        DeleteResult deleteResult;
+
+        Document foundUser; 
         if(isHexadecimal(delete)){
-            deleteResult = database.getCollection("comments").deleteMany( 
+            foundUser = database.getCollection("users").find(
                 or(
-                    eq("user_id", delete),
-                    eq("game_id", delete)
-                )        
-             );
+                    eq("_id", delete)
+                )
+            ).first();
         }else{
-            deleteResult = database.getCollection("comments").deleteMany( 
+            foundUser = database.getCollection("users").find(
                 or(
                     eq("username", delete),
                     eq("email", delete)
-                )                
-             );
-
-             if(deleteResult.getDeletedCount() == 0){
-                Document foundGame =  database.getCollection("games").find(
-                    eq("name", delete)
-                ).first();
-                deleteResult = database.getCollection("comments").deleteMany( 
-                    eq("game_id", foundGame.get("_id").toString())
-                );
-             }
+                )
+            ).first();
         }
+        Document foundGame;
+        if(isHexadecimal(delete)){
+            foundGame =  database.getCollection("games").find(
+                eq("_id", delete)
+            ).first();
+        }else{
+            foundGame =  database.getCollection("games").find(
+                eq("name", delete)
+            ).first();
+        }
+        DeleteResult deleteResult = null;
+        if (foundGame != null) {
+            deleteResult = database.getCollection("comments").deleteMany( 
+                eq("game_id", foundGame.get("_id").toString())
+            );
+        }else if (foundUser != null) {
+            deleteResult = database.getCollection("comments").deleteMany( 
+                eq("user_id", foundUser.get("_id").toString())
+            );
+        }
+  
 
          if (deleteResult.getDeletedCount() > 0) {
              System.out.println("comments deleted successfully!");
