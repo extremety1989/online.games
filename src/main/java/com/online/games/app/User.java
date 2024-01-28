@@ -135,63 +135,8 @@ public class User {
                                 this.delete(database, delete);
                              
                             } else if (sub_option == 5) {
-                                System.out.println("\n");
-                                int pageSize = 5;
-                                long totalDocuments = database.getCollection("users").countDocuments();
-                                int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-                                System.out.printf("Total users: %d\n", totalDocuments);
-                                if (totalPages == 0) {
-                                    System.out.println("No users found.");
-                                }else{
-                                    int currentPage = 1; // Start with page 1
-                                    boolean paginating = true;
-    
-                                    while (paginating) {
-                                       
-                                        System.out.println("\n");
-                                        System.out.printf("%-29s %-20s %-20s %-5s %-30s %-20s\n", "Id", "lastname", "Firstname", "Age", "Email", "Username");
-                                        System.out.println(
-                                                "------------------------------------------------------------------------------------------------------");
-    
-                                        int skipDocuments = (currentPage - 1) * pageSize;
-                                        this.read(database, skipDocuments, pageSize);
-    
-                                        // Pagination controls
-                                        System.out.println(
-                                                "------------------------------------------------------------------------------------------------------");
-                                        System.out.print("\n");
-                                        System.out.printf("Page %d of %d\n", currentPage, totalPages);
-                                        System.out.print("\n");
-                                        System.out.printf("n: Next page | p: Previous page | q: Quit\n");
-                                        System.out.print("\n");
-                                        System.out.print("Enter option: ");
-    
-                                        String paginationOption = scanner.nextLine();
-    
-                                        switch (paginationOption) {
-                                            case "n":
-                                                if (currentPage < totalPages) {
-                                                    currentPage++;
-                                                } else {
-                                                    System.out.println("You are on the last page.");
-                                                }
-                                                break;
-                                            case "p":
-                                                if (currentPage > 1) {
-                                                    currentPage--;
-                                                } else {
-                                                    System.out.println("You are on the first page.");
-                                                }
-                                                break;
-                                            case "q":
-                                                paginating = false;
-                                                break;
-                                            default:
-                                                System.out.println("Invalid option. Please try again.");
-                                                break;
-                                        }
-                                    }
-                                }
+
+                                this.read(scanner, database);
                             } 
 
 
@@ -222,12 +167,14 @@ public class User {
                 .append("age", age)
                 .append("email", email)
                 .append("username", username)
-                .append("password", passwordHash);
+                .append("password", passwordHash)
+                .append("created_at", new Date());
             database.getCollection("users").createIndex(
                 new Document("username", 1).append("email", 1).append("_id", 1).append("firstname", 1).append("lastname", 1), 
                 new IndexOptions().unique(true));
             database.getCollection("users").insertOne(newuser);
             System.out.println("user created successfully!");
+
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
@@ -236,21 +183,79 @@ public class User {
 
 
 
-    private void read(MongoDatabase database, int skipDocuments, int pageSize) {
-        FindIterable<Document> pageusers = database.getCollection("users").find()
-        .skip(skipDocuments)
-        .limit(pageSize);
-        for (Document user : pageusers) {
-            Object id = user.get("_id");
-            System.out.printf("%-29s %-20s %-20s %-5d %-40s %-20s %-20s\n",
-                    id.toString(),
-                    user.getString("lastname"),
-                    user.getString("firstname"),
-                    user.getInteger("age"),
-                    user.getString("email"),
-                    user.getString("username"),
-                    user.getString("password")
-            );
+    private void read(Scanner scanner, MongoDatabase database) {
+
+        System.out.println("\n");
+        int pageSize = 5;
+        long totalDocuments = database.getCollection("users").countDocuments();
+        int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
+        System.out.printf("Total users: %d\n", totalDocuments);
+        if (totalPages == 0) {
+            System.out.println("No users found.");
+        }else{
+            int currentPage = 1; // Start with page 1
+            boolean paginating = true;
+
+            while (paginating) {
+               
+                System.out.println("\n");
+                System.out.printf("%-29s %-20s %-20s %-5s %-30s %-20s\n", "Id", "lastname", "Firstname", "Age", "Email", "Username");
+                System.out.println(
+                        "------------------------------------------------------------------------------------------------------");
+
+                int skipDocuments = (currentPage - 1) * pageSize;
+                FindIterable<Document> pageusers = database.getCollection("users").find()
+                .skip(skipDocuments)
+                .limit(pageSize);
+                for (Document user : pageusers) {
+                    Object id = user.get("_id");
+                    System.out.printf("%-29s %-20s %-20s %-5d %-40s %-20s %-20s\n",
+                            id.toString(),
+                            user.getString("lastname"),
+                            user.getString("firstname"),
+                            user.getInteger("age"),
+                            user.getString("email"),
+                            user.getString("username"),
+                            user.getString("password"),
+                            user.getDate("created_at")
+                    );
+                }
+
+                // Pagination controls
+                System.out.println(
+                        "------------------------------------------------------------------------------------------------------");
+                System.out.print("\n");
+                System.out.printf("Page %d of %d\n", currentPage, totalPages);
+                System.out.print("\n");
+                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
+                System.out.print("\n");
+                System.out.print("Enter option: ");
+
+                String paginationOption = scanner.nextLine();
+
+                switch (paginationOption) {
+                    case "n":
+                        if (currentPage < totalPages) {
+                            currentPage++;
+                        } else {
+                            System.out.println("You are on the last page.");
+                        }
+                        break;
+                    case "p":
+                        if (currentPage > 1) {
+                            currentPage--;
+                        } else {
+                            System.out.println("You are on the first page.");
+                        }
+                        break;
+                    case "q":
+                        paginating = false;
+                        break;
+                    default:
+                        System.out.println("Invalid option. Please try again.");
+                        break;
+                }
+            }
         }
     }
 
@@ -271,6 +276,7 @@ public class User {
             + " Email: " + found.getString("email") 
             + " Username: " + found.getString("username")
             + " Password: " + found.getString("password")
+            + " Created at: " + found.getDate("created_at")
             + " Total comments: " + totalComments
             + " Total ratins: " + totalRatings
             + " Total purchases: " + totalPurchases
