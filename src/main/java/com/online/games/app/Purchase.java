@@ -162,7 +162,7 @@ public class Purchase {
             while (paginating) {
 
                 System.out.println("\n");
-                System.out.printf("%-30s %-30s %-30s %-5s %-3s %-6s\n" + //
+                System.out.printf("%-30s %-30s %-5s %-3s %-6s\n" + //
                         "", "User Id", "Bank Name", "Bank Number", "Currency", "created_at");
                 System.out.println(
                         "----------------------------------------------------------------------------------------------------------------------------------------------------");
@@ -173,11 +173,11 @@ public class Purchase {
                 .limit(pageSize);
         for (Document p : page) {
             Document temp = p.get("bank", Document.class);
-            System.out.print(p.get("user_id"));
-            System.out.print(temp.get("name"));
-            System.out.print(temp.get("number"));
-            System.out.print(p.get("currency"));
-            System.out.print(p.get("created_at"));
+            System.out.print(p.get("user_id") + " ");
+            System.out.print(temp.get("name") + " ");
+            System.out.print(temp.get("number") + " ");
+            System.out.print(p.get("currency") + " ");
+            System.out.print(p.get("created_at")    + " ");
             System.out.println();
             }
 
@@ -273,7 +273,7 @@ public class Purchase {
                 if (isHexadecimal(id_or_username_or_email_or_gamename)){
                     foundUser = database.getCollection("users").find(
                     
-                                eq("_id", new ObjectId(id_or_username_or_email_or_gamename)),
+                                eq("_id", new ObjectId(id_or_username_or_email_or_gamename))
                                )
                         .first();
                 } else{
