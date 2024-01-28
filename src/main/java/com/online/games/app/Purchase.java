@@ -38,9 +38,7 @@ public class Purchase {
             System.out.println("2: Delete purchase");
             System.out.println("3: Delete All purchases by user");
             System.out.println("4: List All purchases");
-
-            System.out.println("5: List All purchases by date");
-            System.out.println("6: List All purchases by user or game");
+            System.out.println("5: List All purchases by user or game");
 
             System.out.println("0: Return to main menu");
             System.out.print("Enter option: ");
@@ -78,9 +76,7 @@ public class Purchase {
 
             else if (sub_option == 4) {
                 this.read(scanner, database);
-            } else if (sub_option == 5) {
-                this.readByDate(scanner, database);
-            } else if (sub_option == 6) {
+            }else if (sub_option == 5) {
                 this.readByUserOrGame(scanner, database);
             } else if (sub_option == 0) {
                 sub_exit = true;
@@ -369,86 +365,6 @@ public class Purchase {
         }
     }
 
-    private void readByDate(Scanner scanner, MongoDatabase database) {
-        System.out.println("\n");
-        System.out.print("Enter date of purchase to search: ");
-        String date = scanner.nextLine();
-
-        int pageSize = 5;
-        long totalDocuments = database
-                .getCollection("purchases")
-                .countDocuments(eq("created_at", date));
-        int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-        System.out.printf("Total purchases: %d\n", totalDocuments);
-        if (totalPages == 0) {
-            System.out.println("No purchases found.");
-        } else {
-            int currentPage = 1; // Start with page 1
-            boolean paginating = true;
-
-            while (paginating) {
-
-                System.out.println("\n");
-                System.out.printf("%-29s %-29s %-29s %-40s %-9i %-5s %-3s %-6s\n", "Id", "User Id", "Game Id",
-                        "Bank Name", "Bank Number", "Amount", "Currency", "Date");
-                System.out.println(
-                        "----------------------------------------------------------------------------------------------------------------------------------------------------");
-
-                int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> page = database.getCollection("purchases").find(eq("created_at", date))
-                        .skip(skipDocuments)
-                        .limit(pageSize);
-                for (Document p : page) {
-                    Object id = p.get("_id");
-                    Document temp = p.get("bank", Document.class);
-                    System.out.printf("%-29s %-29s %-29s %-40s %-9i %-5s %-3s %-6s\n",
-                            id.toString(),
-                            p.get("user_id"),
-                            p.get("game_id"),
-                            temp.get("name"),
-                            temp.get("number"),
-                            p.getDouble("amount"),
-                            p.get("currency"),
-                            p.getDate("created_at"));
-                }
-
-                // Pagination controls
-                System.out.println(
-                        "----------------------------------------------------------------------------------------------------------------------------------------------------");
-                System.out.print("\n");
-                System.out.printf("Page %d of %d\n", currentPage, totalPages);
-                System.out.print("\n");
-                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
-                System.out.print("\n");
-                System.out.print("Enter option: ");
-
-                String paginationOption = scanner.nextLine();
-
-                switch (paginationOption) {
-                    case "n":
-                        if (currentPage < totalPages) {
-                            currentPage++;
-                        } else {
-                            System.out.println("You are on the last page.");
-                        }
-                        break;
-                    case "p":
-                        if (currentPage > 1) {
-                            currentPage--;
-                        } else {
-                            System.out.println("You are on the first page.");
-                        }
-                        break;
-                    case "q":
-                        paginating = false;
-                        break;
-                    default:
-                        System.out.println("Invalid option. Please try again.");
-                        break;
-                }
-            }
-        }
-    }
 
     private void delete(MongoDatabase database, String delete) {
         DeleteResult deleteResult = database.getCollection("purchases").deleteOne(eq("_id", delete));

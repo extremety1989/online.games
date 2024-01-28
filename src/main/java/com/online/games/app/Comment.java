@@ -38,7 +38,7 @@ public class Comment {
                             System.out.println("3: Delete All comments by user-id or username or email or game-id or game-name");
                             System.out.println("4: List All comments");
                             System.out.println("5: List All comments by username or email or game-name");
-                            System.out.println("6: List All comments by date");
+
                           
                             System.out.println("0: Return to main menu");
                             System.out.print("Enter option: ");
@@ -74,10 +74,7 @@ public class Comment {
                             else if (sub_option == 5) {
                                 this.readCommentSByIdOrUsernameOrEmailORGame(scanner, database);
                             } 
-                            else if (sub_option == 6){
-                           
-                                this.readByDate(scanner, database);
-                            }
+               
                             else if (sub_option == 0) {
                                 sub_exit = true;
                                 break;
@@ -313,79 +310,7 @@ public class Comment {
         }
     }
 
-    private void readByDate(Scanner scanner, MongoDatabase database) {
-        System.out.println("\n");
-        System.out.print("Enter date of comment to search: ");
-        String date = scanner.nextLine();
 
-        int pageSize = 5;
-        long totalDocuments = database
-                        .getCollection("comments")
-                        .countDocuments(eq("created_at", date));
-        int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-        System.out.printf("Total comments: %d\n", totalDocuments);
-        if (totalPages == 0) {
-            System.out.println("No comments found.");
-        }else{
-            int currentPage = 1; // Start with page 1
-            boolean paginating = true;
-
-            while (paginating) {
-               
-                System.out.println("\n");
-                System.out.printf("%-29s %-29s %-20s %-20s %-5s\n", "Id", "Game Id","User Id", "Comment", "Date");
-                System.out.println(
-                        "------------------------------------------------------------------------------------------------------------");
-
-                int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> page = database.getCollection("comments").find(eq("created_at", date)).skip(skipDocuments).limit(pageSize);
-                for (Document p : page) {
-                    Object id = p.get("_id");
-                    System.out.printf("%-29s %-20s %-20s %-5s\n",
-                            id,
-                            p.get("game_id"),
-                            p.get("user_id"),
-                            p.get("comment"),
-                            p.get("created_at"));
-                }
-
-                // Pagination controls
-                System.out.println(
-                        "------------------------------------------------------------------------------------------------------------");
-                System.out.print("\n");
-                System.out.printf("Page %d of %d\n", currentPage, totalPages);
-                System.out.print("\n");
-                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
-                System.out.print("\n");
-                System.out.print("Enter option: ");
-
-                String paginationOption = scanner.nextLine();
-
-                switch (paginationOption) {
-                    case "n":
-                        if (currentPage < totalPages) {
-                            currentPage++;
-                        } else {
-                            System.out.println("You are on the last page.");
-                        }
-                        break;
-                    case "p":
-                        if (currentPage > 1) {
-                            currentPage--;
-                        } else {
-                            System.out.println("You are on the first page.");
-                        }
-                        break;
-                    case "q":
-                        paginating = false;
-                        break;
-                    default:
-                        System.out.println("Invalid option. Please try again.");
-                        break;
-                }
-            }
-        }
-   }
 
     private void delete(MongoDatabase database, String delete) {
         DeleteResult deleteResult = database.getCollection("comments").deleteOne( eq("_id", new ObjectId(delete)));
