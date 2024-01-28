@@ -296,7 +296,7 @@ public class User {
             UpdateResult updateResult = database.getCollection("users").updateOne(
                     or(
                         eq("_id", update), 
-                        eq("email", update);
+                        eq("email", update),
                         eq("username", update)
                     ),
                     new Document("$set", updateDoc));
