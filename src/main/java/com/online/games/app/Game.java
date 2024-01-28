@@ -199,7 +199,7 @@ public class Game {
                                 .append("name", bankName)
                                 .append("number", bankNumber));
                     }
-
+                    
                     new_purchase.append("date", new Date())
                             .append("user_id", found_user.get("_id"))
                             .append("game_id", found_game.get("_id"));
@@ -208,6 +208,7 @@ public class Game {
 
                     if (result.wasAcknowledged()) {
                         System.out.println("Transaction created successfully!");
+                        found_game.put("total", (int) found_game.get("total") + 1);
                     } else {
                         System.out.println("Transaction not created.");
                     }
