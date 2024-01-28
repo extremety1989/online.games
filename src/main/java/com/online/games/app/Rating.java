@@ -5,8 +5,11 @@ import static com.mongodb.client.model.Filters.or;
 
 import java.util.Date;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import com.mongodb.client.FindIterable;
 
@@ -16,7 +19,12 @@ import com.mongodb.client.result.InsertOneResult;
 
 public class Rating {
 
+            private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
 
+    private static boolean isHexadecimal(String input) {
+        final Matcher matcher = HEXADECIMAL_PATTERN.matcher(input);
+        return matcher.matches();
+    }
     public void run(Scanner scanner, MongoDatabase database){
               
                         boolean sub_exit = false;
@@ -239,8 +247,8 @@ public class Rating {
                 FindIterable<Document> page = database.getCollection("ratings")
                 .find(
                    or(
-                        eq("user_id", foundUser.get("_id").toString()),
-                        eq("game_id", foundGame.get("_id").toString())
+                        eq("user_id", new ObjectId(foundUser.get("_id").toString())),
+                        eq("game_id", new ObjectId(foundGame.get("_id").toString()))
                    )
                 ).skip(skipDocuments).limit(pageSize);
         
@@ -304,9 +312,9 @@ public class Rating {
     private void deleteAllByUserIdOrUsernameOrEmail(MongoDatabase database, String delete){
         DeleteResult deleteResult = database.getCollection("ratings").deleteMany( 
             or(
-                eq("_id", delete),
-                eq("user_id", delete),
-                eq("game_id", delete)
+                eq("_id", new ObjectId(delete)),
+                eq("user_id", new ObjectId(delete)),
+                eq("game_id", new ObjectId(delete))
             )                
          );
          if (deleteResult.getDeletedCount() > 0) {

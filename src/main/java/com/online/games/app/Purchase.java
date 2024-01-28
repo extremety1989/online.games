@@ -5,6 +5,8 @@ import static com.mongodb.client.model.Filters.or;
 
 import java.util.Date;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bson.Document;
 
@@ -16,6 +18,13 @@ import com.mongodb.client.result.InsertOneResult;
 
 public class Purchase {
 
+    private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
+
+    private static boolean isHexadecimal(String input) {
+        final Matcher matcher = HEXADECIMAL_PATTERN.matcher(input);
+        return matcher.matches();
+    }
+
     public void run(Scanner scanner, MongoDatabase database) {
         // Users management
         boolean sub_exit = false;
@@ -25,12 +34,12 @@ public class Purchase {
             System.out.println("\n");
             System.out.println("Choose an operation:");
             System.out.println("1: Create purchase");
-            System.out.println("1: Delete purchase");
-            System.out.println("2: Delete All purchases by user");
-            System.out.println("3: List All purchases");
+            System.out.println("2: Delete purchase");
+            System.out.println("3: Delete All purchases by user");
+            System.out.println("4: List All purchases");
 
-            System.out.println("4: List All purchases by date");
-            System.out.println("5: List All purchases by user or game");
+            System.out.println("5: List All purchases by date");
+            System.out.println("6: List All purchases by user or game");
 
             System.out.println("0: Return to main menu");
             System.out.print("Enter option: ");
@@ -152,7 +161,7 @@ public class Purchase {
             while (paginating) {
 
                 System.out.println("\n");
-                System.out.printf("%-29s %-29s %-29s %-40s %-5d %-3s %-s\\n" + //
+                System.out.printf("%-29s %-29s %-29s %-40s %-5d %-3s %-6s\n" + //
                         "", "Id", "Game Id", "User Id", "Bank Name", "Bank Number", "Currency", "created_at");
                 System.out.println(
                         "----------------------------------------------------------------------------");
@@ -164,7 +173,7 @@ public class Purchase {
         for (Document p : page) {
             Object id = p.get("_id");
             Document temp = p.get("bank", Document.class);
-                System.out.printf("%-29s %-29s %-29s %-40s %-5d %-3s %-s\n",
+                System.out.printf("%-29s %-29s %-29s %-40s %-5d %-3s %-6s\n",
                         id.toString(),
                         p.getString("game_id"),
                         p.getString("user_id"),
@@ -236,7 +245,7 @@ public class Purchase {
             while (paginating) {
 
                 System.out.println("\n");
-                System.out.printf("%-29s %-40s %-5d %-3s %-s\\n", "Id", "Bank Name", "Bank Number", "Amount",
+                System.out.printf("%-29s %-40s %-5d %-3s %-6s\n", "Id", "Bank Name", "Bank Number", "Amount",
                         "Currency", "Date");
                 System.out.println(
                         "----------------------------------------------------------------------------");
@@ -267,7 +276,7 @@ public class Purchase {
 
                 for (Document p : page) {
                     Object id = p.get("_id");
-                    System.out.printf("%-29s %-40s %-5d %-3s %-s\n",
+                    System.out.printf("%-29s %-40s %-5d %-3s %-6s\n",
                             id.toString(),
                             p.getString("bankName"),
                             p.getInteger("bankNumber"),
@@ -334,7 +343,7 @@ public class Purchase {
             while (paginating) {
 
                 System.out.println("\n");
-                System.out.printf("%-29s %-29s %-29s %-40s %-9i %-5d %-3s %-s\\n", "Id", "User Id", "Game Id",
+                System.out.printf("%-29s %-29s %-29s %-40s %-9i %-5d %-3s %-6s\n", "Id", "User Id", "Game Id",
                         "Bank Name", "Bank Number", "Amount", "Currency", "Date");
                 System.out.println(
                         "----------------------------------------------------------------------------");
@@ -345,7 +354,7 @@ public class Purchase {
                         .limit(pageSize);
                 for (Document p : page) {
                     Object id = p.get("_id");
-                    System.out.printf("%-29s %-29s %-29s %-40s %-9i %-5d %-3s %-s\n",
+                    System.out.printf("%-29s %-29s %-29s %-40s %-9i %-5d %-3s %-6s\n",
                             id.toString(),
                             p.getString("user_id"),
                             p.getString("game_id"),
@@ -404,11 +413,16 @@ public class Purchase {
     }
 
     private void deleteByUserIdOrUsernameOrEmail(MongoDatabase database, String delete) {
-        DeleteResult deleteResult = database.getCollection("purchases").deleteMany(
-                or(
-                        eq("user_id", delete),
-                        eq("username", delete),
-                        eq("email", delete)));
+        DeleteResult deleteResult;
+        if (isHexadecimal(delete)){
+            deleteResult = database.getCollection("purchases").deleteMany(eq("user_id", delete));
+        }else{
+            deleteResult = database.getCollection("purchases").deleteMany(
+                    or(
+                            eq("username", delete),
+                            eq("email", delete)));
+        }
+
         if (deleteResult.getDeletedCount() > 0) {
             System.out.println("purchases deleted successfully!");
         } else {

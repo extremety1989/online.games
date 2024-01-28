@@ -169,18 +169,24 @@ public class BulkData {
         );
 
     public void createMock(MongoDatabase database) {
+        database.getCollection("categories").drop();
+        database.getCollection("games").drop();
+        database.getCollection("users").drop();
+        database.getCollection("purchases").drop();
+        database.getCollection("comments").drop();
+        database.getCollection("ratings").drop();
         this.createMockCategory(database);
         this.createMockUser(database);
     }
 
     public void createMockCategory(MongoDatabase database) {
         List <Document> categories = new ArrayList<Document>();
-        for (int i = 0; i < 100; i++){
-            Faker faker = new Faker();
-            String name = bankNames.get(faker.random().nextInt(categoryNames.size()));
+        int size = categoryNames.size();
+        for (int i = 0; i < size; i++){
+            String name = categoryNames.get(i);
             categories.add(new Document().append("name", name));
         }
-        database.getCollection("games").createIndex(
+        database.getCollection("categories").createIndex(
             new Document("name", 1).append("_id", 1),
             new IndexOptions().unique(true));
         database.getCollection("categories").insertMany(categories);
@@ -192,11 +198,13 @@ public class BulkData {
         List <Document> games = new ArrayList<Document>();
         for (Document category : categories) {
                 for (int i = 0; i < 10; i++) {
-                    String name = gameNames.get(faker.random().nextInt(gameNames.size()) + 1);
+                    String name = gameNames.get(faker.random().nextInt(gameNames.size()));
                     Double price = prices.get(faker.random().nextInt(prices.size()));
-                    Integer ageLimit = faker.number().numberBetween(9, 18);
-                    Document game = new Document().append("name", name).append("category", category).append("price", price)
-                            .append("ageLimit", ageLimit);
+                    Integer age_restriction = faker.number().numberBetween(9, 18);
+                   
+                    Document game = new Document().append("name", name).append("category", 
+                    category).append("price", price)
+                            .append("age_restriction", age_restriction).append("total", 0);
                     games.add(game);
                 }
         }
@@ -217,21 +225,22 @@ public class BulkData {
             String email = faker.internet().emailAddress();
             String userName = faker.name().username();
             String password = faker.internet().password();
+            Integer age = faker.number().numberBetween(14, 55);
             Date date = faker.date().birthday();
-            Document user = new Document().append("firstName",
-             firstName).append("lastName", lastName).append("email", email)
-                    .append("userName", userName).append("password", password).append("date", date);
+            Document user = new Document().append("firstname",
+             firstName).append("lastname", lastName).append("email", email).append("age", age)
+                    .append("username", userName).append("password", password).append("created_at", date);
             users.add(user);
         }
         database.getCollection("users").createIndex(
-                new Document("username", 1).append("email", 1).append("_id", 1).append("firstname", 1).append("lastname", 1), 
+                new Document("username", 1).append("email", 1).append("_id", 1), 
                 new IndexOptions().unique(true));
 
         database.getCollection("users").insertMany(users);
-        List <Document> games = database.getCollection("games").find().into(new ArrayList<Document>());
-        this.createMockPurchase(database, users, games);
-        this.createMockComment(database, users, games);
-        this.createMockRating(database, users, games);
+        // List <Document> games = database.getCollection("games").find().into(new ArrayList<Document>());
+        // this.createMockPurchase(database, users, games);
+        // this.createMockComment(database, users, games);
+        // this.createMockRating(database, users, games);
     }
 
     public void createMockPurchase(MongoDatabase database, List<Document> users, List<Document> games) {
@@ -246,8 +255,10 @@ public class BulkData {
                 String currency = "EUR";
                 Document purchase = new Document();
                 purchase.append("created_at", faker.date().birthday());
-                purchase.append("user_id", user.get("_id"));
-                purchase.append("game_id", gameNames.get(faker.random().nextInt(games.size()) + 1))
+                Object user_id = user.get("_id");
+                purchase.append("created_at", faker.date().birthday());
+                purchase.append("user_id", user_id);
+                purchase.append("game_id", gameNames.get(faker.random().nextInt(games.size())))
                 .append("bank", new Document().append("name", bankName).append("number", bankNumber));
 
                 purchase.append("amount", amout)
@@ -270,7 +281,7 @@ public class BulkData {
                 Document commentDoc = new Document();
                 commentDoc.append("created_at", faker.date().birthday());
                 commentDoc.append("user_id", user.get("_id"));
-                commentDoc.append("game_id", gameNames.get(faker.random().nextInt(games.size()) + 1))
+                commentDoc.append("game_id", gameNames.get(faker.random().nextInt(games.size())))
                 .append("comment", comment);
 
                 comments.add(commentDoc);
@@ -290,7 +301,7 @@ public class BulkData {
                 Document ratingDoc = new Document();
                 ratingDoc.append("created_at", faker.date().birthday());
                 ratingDoc.append("user_id", user.get("_id"));
-                ratingDoc.append("game_id", gameNames.get(faker.random().nextInt(games.size()) + 1))
+                ratingDoc.append("game_id", gameNames.get(faker.random().nextInt(games.size())))
                 .append("rating", rating);
 
                 ratings.add(ratingDoc);

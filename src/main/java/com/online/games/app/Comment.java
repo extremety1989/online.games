@@ -5,8 +5,11 @@ import static com.mongodb.client.model.Filters.or;
 
 import java.util.Date;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import com.mongodb.client.FindIterable;
 
@@ -15,7 +18,12 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 
 public class Comment {
+            private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
 
+    private static boolean isHexadecimal(String input) {
+        final Matcher matcher = HEXADECIMAL_PATTERN.matcher(input);
+        return matcher.matches();
+    }
 
     public void run(Scanner scanner, MongoDatabase database){
                         // Users management
@@ -136,7 +144,7 @@ public class Comment {
                             p.getString("game_id"),
                             p.getString("user_id"),
                             p.getString("comment"),
-                            p.getString("date"));
+                            p.getString("created_at"));
                 }
                 // Pagination controls
                 System.out.println(
@@ -206,7 +214,7 @@ public class Comment {
                             p.getString("user_id"),
                         
                             p.getString("comment"),
-                            p.getString("date"));
+                            p.getString("created_at"));
                 }
 
                 // Pagination controls
@@ -318,7 +326,7 @@ public class Comment {
                             p.getString("game_id"),
                             p.getString("user_id"),
                             p.getString("comment"),
-                            p.getString("date"));
+                            p.getString("created_at"));
                 }
 
                 // Pagination controls
@@ -371,7 +379,7 @@ public class Comment {
     private void deleteByUserIdOrUsernameOrEmail(MongoDatabase database, String delete){
         DeleteResult deleteResult = database.getCollection("comments").deleteMany( 
             or(
-                eq("user_id", delete),
+                eq("user_id", new ObjectId(delete)),
                 eq("username", delete),
                 eq("email", delete)
             )                

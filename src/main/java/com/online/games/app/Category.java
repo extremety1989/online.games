@@ -3,10 +3,14 @@ package com.online.games.app;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.or;
 
-
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import com.mongodb.client.FindIterable;
 
@@ -16,6 +20,12 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 
 public class Category {
+            private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
+
+            private static boolean isHexadecimal(String input) {
+                final Matcher matcher = HEXADECIMAL_PATTERN.matcher(input);
+                return matcher.matches();
+            }
 
             public void run(Scanner scanner, MongoDatabase database){
                        
@@ -47,7 +57,7 @@ public class Category {
 
                          
                                 System.out.print(
-                                        "Enter category-name: ");
+                                        "Enter category-id or category-name to update: ");
                                 Document updateDoc = new Document();
                                 String update = scanner.nextLine();
 
@@ -160,25 +170,37 @@ public class Category {
     }
 
     private void delete(MongoDatabase database, String delete) {
-         DeleteResult deleteResult = database.getCollection("categories").deleteOne(or(
-                                        eq("name", delete),
-                                        eq("_id", delete)));
-                                if (deleteResult.getDeletedCount() > 0) {
-                                    System.out.println("game deleted successfully!");
-                                } else {
-                                    System.out.println("No game deleted.");
-                                }
-    }
+        DeleteResult deleteResult;
+        if(isHexadecimal(delete)){
+          deleteResult = database.getCollection("categories").deleteOne(new Document("_id", new ObjectId(delete)));
+
+        }else{
+            deleteResult = database.getCollection("categories").deleteOne(eq("name", delete));
+        }
+                   
+         if (deleteResult.getDeletedCount() > 0) {
+            System.out.println("category deleted successfully!");
+        } else {
+            System.out.println("No category deleted.");
+        }
+}
 
     private void update(MongoDatabase database, String update, Document updateDoc){
-            UpdateResult updateResult = database.getCollection("categories").updateOne(
-                    or(eq("name", update), eq("price", update)),
-                    new Document("$set", updateDoc));
+        UpdateResult updateResult;
+        if(isHexadecimal(update)){
+            updateResult = database.getCollection("categories").updateOne(
+                    eq("_id", new ObjectId(update)), new Document("$set", updateDoc));
+                
+        }else{
+            updateResult = database.getCollection("categories").updateOne(
+                    eq("name", update), new Document("$set", updateDoc));
+        }
+        
 
             if (updateResult.getModifiedCount() > 0) {
-                System.out.println("game updated successfully!");
+                System.out.println("category updated successfully!");
             } else {
-                System.out.println("No game found.");
+                System.out.println("No category found.");
             }
     }
 }

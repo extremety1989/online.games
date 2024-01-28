@@ -4,14 +4,20 @@ import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.or;
 import static com.mongodb.client.model.Filters.text;
 
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
@@ -20,6 +26,13 @@ import com.mongodb.client.result.InsertOneResult;
 
 
 public class Game {
+
+        private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
+
+    private static boolean isHexadecimal(String input) {
+        final Matcher matcher = HEXADECIMAL_PATTERN.matcher(input);
+        return matcher.matches();
+    }
 
     public void run(Scanner scanner, MongoDatabase database) {
 
@@ -52,10 +65,11 @@ public class Game {
                 String category = scanner.nextLine();
 
                 System.out.print("Enter price: ");
-                Double price = scanner.nextDouble();
-
+                String price_string = scanner.nextLine();
+                Double price = Double.parseDouble(price_string);
                 System.out.print("Enter age limit: ");
-                Integer age_limit = scanner.nextInt();
+                String age_limit_string = scanner.nextLine();
+                Integer age_limit = Integer.parseInt(age_limit_string);
                 scanner.nextLine();
                 this.create(database, name, category, age_limit, price);
 
@@ -81,10 +95,13 @@ public class Game {
                 this.read(scanner, database);
 
             } else if (sub_option == 6) {
+                System.out.print("Enter category: ");
                 this.findByCategory(scanner, database);
             } else if (sub_option == 7) {
+                System.out.print("Enter price: ");
                 this.findByPrice(scanner, database);
             } else if (sub_option == 8) {
+           
                 this.purchaseAGame(scanner, database);
             } else if (sub_option == 0) {
                 sub_exit = true;
@@ -110,12 +127,14 @@ public class Game {
                     .append("price", price)
                     .append("age_restriction", age_restriction);
             newgame.append("category", findCategory);
+            newgame.append("total", 0);
             database.getCollection("games").createIndex(
                     new Document("name", 1).append("_id", 1).append("category", 1).append("price", 1).append("price",
                             1),
                     new IndexOptions().unique(true));
             database.getCollection("games").insertOne(newgame);
             System.out.println("game created successfully!");
+        
         } else {
             System.out.println("Category not found.");
             return;
@@ -125,6 +144,11 @@ public class Game {
     private void purchaseAGame(Scanner scanner, MongoDatabase database) {
         System.out.print("Enter user-id or username or email: ");
         String id_or_username_or_email = scanner.nextLine();
+
+        if( id_or_username_or_email.isEmpty() ){
+            System.out.println("Empty field.");
+            return;
+        }
         System.out.print("Enter the game-name or game-id that he wants to purchase: ");
         String gameName_or_gameId = scanner.nextLine();
 
@@ -152,7 +176,8 @@ public class Game {
         System.out.println("[9] Royal Bank of Canada");
         System.out.println("[10] BNP Paribas");
 
-        int bankChoice = scanner.nextInt();
+        String bankChoice_string = scanner.nextLine();
+        Integer bankChoice = Integer.parseInt(bankChoice_string);
         if (bankChoice > 10) {
             System.out.println("Invalid choice. Please try again.");
             return;
@@ -160,33 +185,52 @@ public class Game {
 
         String bankName = bankNames.get(bankChoice - 1);
         System.out.println("Enter bank number (enter to skip): ");
-        Integer bankNumber = scanner.nextInt();
-        if (bankNumber != null && (bankNumber < 0 || bankNumber > 999999999999L)) {
+
+        String bankNumber_string = scanner.nextLine();
+        Long bankNumber = null;
+        if (!bankNumber_string.isEmpty()) {
+            bankNumber = Long.parseLong(bankNumber_string);
+        }
+        if (bankNumber != null && (bankNumber < 0 || bankNumber > 9999_9999_9999L)) {
             System.out.println("Invalid bank number. Please try again.");
             return;
         }
         System.out.println("Enter amount: ");
-        Double amount = scanner.nextDouble();
+        String amount_string = scanner.nextLine();
+        Double amount = Double.parseDouble(amount_string);
         if (amount < 0) {
             System.out.println("Invalid amount. Please try again.");
             return;
         }
         System.out.println("Enter a currency US or EUR: ");
         String currency = scanner.nextLine();
-        Document found_user = database.getCollection("users").find(
-                or(
-                        eq("_id", id_or_username_or_email),
-                        eq("username", id_or_username_or_email),
-                        eq("email", id_or_username_or_email)))
-                .first();
+        Document found_user;
+        if (isHexadecimal(id_or_username_or_email)){
+            found_user = database.getCollection("users").find(eq("_id",
+             new ObjectId(id_or_username_or_email))).first();
+        }else {
+            found_user = database.getCollection("users").find(
+                    or(
+                            eq("username", id_or_username_or_email),
+                            eq("email", id_or_username_or_email)))
+                    .first();
+        }
+
 
         if (found_user != null) {
 
-            Document found_game = database.getCollection("games").find(
-                    or(
-                            eq("_id", gameName_or_gameId),
-                            eq("name", gameName_or_gameId)))
-                    .first();
+            Document found_game;
+            if(isHexadecimal(gameName_or_gameId)){
+                found_game = database.getCollection("games").find(eq("_id", 
+                new ObjectId(gameName_or_gameId))).first();
+            }else{
+                found_game = database.getCollection("games").find(
+                      
+                                eq("name", gameName_or_gameId)
+                                )
+                        .first();
+            }
+    
             if (found_game != null) {
                 if ((int) found_user.get("age") >= (int) found_game.get("age_restriction")) {
 
@@ -201,8 +245,8 @@ public class Game {
                     }
                     
                     new_purchase.append("date", new Date())
-                            .append("user_id", found_user.get("_id"))
-                            .append("game_id", found_game.get("_id"));
+                            .append("user_id", new ObjectId(found_user.get("_id").toString()))
+                            .append("game_id", new ObjectId(found_game.get("_id").toString()));
 
                     InsertOneResult result = database.getCollection("purchases").insertOne(new_purchase);
 
@@ -241,10 +285,10 @@ public class Game {
             while (paginating) {
 
                 System.out.println("\n");
-                System.out.printf("%-29s %-30s %-5d %-20s %-2i %-9i\n", "Id", "Name", "Price", "Category",
+                System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n", "Id", "Name", "Price", "Category",
                         "Age Restriction", "Total");
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "---------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
                 FindIterable<Document> pagegames = database.getCollection("games").find()
@@ -252,18 +296,20 @@ public class Game {
                         .limit(pageSize);
 
                 for (Document game : pagegames) {
-                    System.out.printf("%-29s %-30s %-5d %-20s %-2i %-9i\n",
-                            game.getString("_id"),
+                    Object id = game.get("_id");
+                    Document category = game.get("category", Document.class);
+                    System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n",
+                            id.toString(),
                             game.getString("name"),
-                            game.getString("price"),
-                            game.getString("category"),
+                            game.getDouble("price"),
+                            category.getString("name"),
                             game.getInteger("age_restriction"),
                             game.getInteger("total"));
                 }
 
                 // Pagination controls
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "---------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");
@@ -303,7 +349,10 @@ public class Game {
         String name = scanner.nextLine();
         System.out.println("\n");
         int pageSize = 5;
-        FindIterable<Document> games = database.getCollection("games").find(text(name));
+        BasicDBObject q = new BasicDBObject();
+        q.put("name",  java.util.regex.Pattern.compile(name));
+        FindIterable<Document> games = database.getCollection("games").find(q);
+
         long totalDocuments = games.into(new ArrayList<>()).size();
         int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
         System.out.printf("Total games: %d\n", totalDocuments);
@@ -316,28 +365,29 @@ public class Game {
             while (paginating) {
 
                 System.out.println("\n");
-                System.out.printf("%-29s %-30s %-5d %-20s %-2i %-9i\n", "Id", "Name", "Price", "Category",
-                        "Age Restriction", "Total");
+                System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n", "Id", "Name", "Price", "Category",
+                "Age Restriction", "Total");
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "---------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> pagegames = database.getCollection("games").find(text(name))
-                        .skip(skipDocuments)
+                FindIterable<Document> pagegames = games.skip(skipDocuments)
                         .limit(pageSize);
 
-                for (Document game : pagegames) {
-                    System.out.printf("%-29s %-30s %-5d %-20s %-2i %-9i\n",
-                            game.getString("_id"),
-                            game.getString("name"),
-                            game.getString("price"),
-                            game.getString("category"),
-                            game.getInteger("age_restriction"),
-                            game.getInteger("total"));
-                }
+                        for (Document game : pagegames) {
+                            Object id = game.get("_id");
+                            Document category = game.get("category", Document.class);
+                            System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n",
+                                    id.toString(),
+                                    game.getString("name"),
+                                    game.getDouble("price"),
+                                    category.getString("name"),
+                                    game.getInteger("age_restriction"),
+                                    game.getInteger("total"));
+                        }
                 // Pagination controls
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "---------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");
@@ -377,7 +427,10 @@ public class Game {
         String category = scanner.nextLine();
         System.out.println("\n");
         int pageSize = 5;
-        FindIterable<Document> games = database.getCollection("games").find(text(category));
+
+        FindIterable<Document> games = database.getCollection("games").find(
+            eq("category.name", category)
+        );
         long totalDocuments = games.into(new ArrayList<>()).size();
         int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
         System.out.printf("Total games: %d\n", totalDocuments);
@@ -390,29 +443,29 @@ public class Game {
             while (paginating) {
 
                 System.out.println("\n");
-                System.out.printf("%-29s %-30s %-5d %-20s %-2i %-9i\n", "Id", "Name", "Price", "Category",
-                        "Age Restriction", "Total");
+                System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n", "Id", "Name", "Price", "Category",
+                "Age Restriction", "Total");
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "---------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> pagegames = database.getCollection("games").find(text(category))
-                        .skip(skipDocuments)
+                FindIterable<Document> pagegames = games.skip(skipDocuments)
                         .limit(pageSize);
 
-                for (Document game : pagegames) {
-                    System.out.printf("%-29s %-30s %-5d %-20s %-2i %-9i\n",
-                            game.getString("_id"),
-                            game.getString("name"),
-                            game.getString("price"),
-                            game.getString("category"),
-                            game.getInteger("age_restriction"),
-                            game.getInteger("total"));
-                }
+                        for (Document game : pagegames) {
+                            Object id = game.get("_id");
+                            System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n",
+                                    id.toString(),
+                                    game.getString("name"),
+                                    game.getDouble("price"),
+                                    category,
+                                    game.getInteger("age_restriction"),
+                                    game.getInteger("total"));
+                        }
 
                 // Pagination controls
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "---------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");
@@ -452,7 +505,8 @@ public class Game {
         String price = scanner.nextLine();
         System.out.println("\n");
         int pageSize = 5;
-        FindIterable<Document> games = database.getCollection("games").find(text(price));
+        FindIterable<Document> games = database.getCollection("games").find(
+            eq("price", Double.parseDouble(price)));
         long totalDocuments = games.into(new ArrayList<>()).size();
         int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
         System.out.printf("Total games: %d\n", totalDocuments);
@@ -465,29 +519,30 @@ public class Game {
             while (paginating) {
 
                 System.out.println("\n");
-                System.out.printf("%-29s %-30s %-5d %-20s %-2i %-9i\n", "Id", "Name", "Price", "Category",
-                        "Age Restriction", "Total");
+                System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n", "Id", "Name", "Price", "Category",
+                "Age Restriction", "Total");
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "---------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> pagegames = database.getCollection("games").find(text(price))
-                        .skip(skipDocuments)
+                FindIterable<Document> pagegames = games.skip(skipDocuments)
                         .limit(pageSize);
 
-                for (Document game : pagegames) {
-                    System.out.printf("%-29s %-30s %-5d %-20s %-2i %-9i\n",
-                            game.getString("_id"),
-                            game.getString("name"),
-                            game.getString("price"),
-                            game.getString("category"),
-                            game.getInteger("age_restriction"),
-                            game.getInteger("total"));
-                }
+                        for (Document game : pagegames) {
+                            Object id = game.get("_id");
+                            Document category = game.get("category", Document.class);
+                            System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n",
+                                    id.toString(),
+                                    game.getString("name"),
+                                    game.getDouble("price"),
+                                    category.getString("name"),
+                                    game.getInteger("age_restriction"),
+                                    game.getInteger("total"));
+                        }
 
                 // Pagination controls
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "---------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");
@@ -524,15 +579,23 @@ public class Game {
     }
 
     private void delete(MongoDatabase database, String delete) {
-        DeleteResult deleteResult = database.getCollection("games").deleteOne(or(
-                eq("name", delete),
-                eq("_id", delete)));
+      
+        DeleteResult deleteResult;
+        if(isHexadecimal(delete)){
+            deleteResult = database.getCollection("games").deleteOne(new Document("_id", new ObjectId(delete)));
+        }else{
+            deleteResult = database.getCollection("games").deleteOne(eq("name", delete));
+        }
+
         if (deleteResult.getDeletedCount() > 0) {
             System.out.println("game deleted successfully!");
         } else {
             System.out.println("No game deleted.");
         }
+
     }
+
+
 
     private void update(Scanner scanner, MongoDatabase database) {
         String id_or_name = scanner.nextLine();
@@ -555,22 +618,22 @@ public class Game {
         System.out.print("Enter new total: ");
         String totalInput = scanner.nextLine();
 
-        Double newPrice = 0.0;
+        Double newPrice = null;
         if (!priceInput.isEmpty()) {
             newPrice = Double.parseDouble(priceInput);
         }
         if (!newName.isEmpty()) {
             updateDoc.append("name", newName);
         }
-        if (newPrice != 0.0) {
+        if (newPrice != null) {
             updateDoc.append("price", newPrice);
         }
 
         if (!age_restrictionInput.isEmpty()) {
-            updateDoc.append("age_restriction", age_restrictionInput);
+            updateDoc.append("age_restriction", Integer.parseInt(age_restrictionInput));
         }
         if (!totalInput.isEmpty()) {
-            updateDoc.append("total", totalInput);
+            updateDoc.append("total", Integer.parseInt(totalInput));
         }
         if (!updateDoc.isEmpty()) {
 
@@ -581,9 +644,13 @@ public class Game {
                 }
             }
 
-            Document findAndUpdateResult = database.getCollection("games").findOneAndUpdate(or(
-                    eq("name", id_or_name),
-                    eq("_id", id_or_name)), new Document("$set", updateDoc));
+            Document findAndUpdateResult;
+            if ( isHexadecimal(id_or_name) ) {
+                findAndUpdateResult = database.getCollection("games").findOneAndUpdate(eq("_id", new ObjectId(id_or_name)), new Document("$set", updateDoc));
+            } else {
+                findAndUpdateResult = database.getCollection("games").findOneAndUpdate(eq("name", id_or_name), new Document("$set", updateDoc));
+            }
+          
             if (findAndUpdateResult != null) {
                 System.out.println("game updated successfully!");
             } else {

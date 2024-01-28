@@ -5,10 +5,11 @@ import static com.mongodb.client.model.Filters.or;
 
 import java.util.Date;
 import java.util.Scanner;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bson.Document;
-
+import org.bson.types.ObjectId;
 
 import com.mongodb.client.FindIterable;
 
@@ -21,6 +22,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class User {
+
+            private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
+
+    private static boolean isHexadecimal(String input) {
+        final Matcher matcher = HEXADECIMAL_PATTERN.matcher(input);
+        return matcher.matches();
+    }
 
     public void run(Scanner scanner, MongoDatabase database){
                         // Users management
@@ -195,9 +203,9 @@ public class User {
             while (paginating) {
                
                 System.out.println("\n");
-                System.out.printf("%-29s %-20s %-20s %-5s %-30s %-20s\n", "Id", "lastname", "Firstname", "Age", "Email", "Username");
+                System.out.printf("%-29s %-20s %-20s %-5s %-20s %-20s\n", "Id", "Lastname", "Firstname", "Age", "Email", "Username");
                 System.out.println(
-                        "------------------------------------------------------------------------------------------------------");
+                        "------------------------------------------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
                 FindIterable<Document> pageusers = database.getCollection("users").find()
@@ -205,21 +213,19 @@ public class User {
                 .limit(pageSize);
                 for (Document user : pageusers) {
                     Object id = user.get("_id");
-                    System.out.printf("%-29s %-20s %-20s %-5d %-40s %-20s %-20s\n",
+                    System.out.printf("%-29s %-20s %-20s %-5d %-20s %-20s\n",
                             id.toString(),
                             user.getString("lastname"),
                             user.getString("firstname"),
                             user.getInteger("age"),
                             user.getString("email"),
-                            user.getString("username"),
-                            user.getString("password"),
-                            user.getDate("created_at")
+                            user.getString("username")
                     );
                 }
 
                 // Pagination controls
                 System.out.println(
-                        "------------------------------------------------------------------------------------------------------");
+                        "------------------------------------------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");
@@ -256,17 +262,24 @@ public class User {
     }
 
     private void find(MongoDatabase database, String value){
-        Document found = database.getCollection("users").find(or(
-            eq("username", value),
-            eq("email", value),
-            eq("_id", value)
-        )).first();
+
+        Document found;
+        if(isHexadecimal(value)){
+            found = database.getCollection("users").find(eq("_id", new ObjectId(value))).first();
+        } else{
+            found = database.getCollection("users").find(or(
+                                        eq("username", value),
+                                        eq("email", value))
+                                    ).first();
+        }
+
         if (found != null) {
             long totalComments = database.getCollection("comments").countDocuments(eq("user_id", found.get("_id")));
             long totalRatings = database.getCollection("ratings").countDocuments(eq("user_id", found.get("_id")));
             long totalPurchases = database.getCollection("purchases").countDocuments(eq("user_id", found.get("_id")));
             System.out.println(
-            "Lastname: " + found.getString("lastname") 
+                "Id: " + found.get("_id").toString()
+            + "Lastname: " + found.getString("lastname") 
             + " Firstname: "  +  found.getString("firstname") 
             + " Age: " + found.getInteger("age")
             + " Email: " + found.getString("email") 
@@ -283,25 +296,37 @@ public class User {
     }
 
     private void delete(MongoDatabase database, String delete) {
-         DeleteResult deleteResult = database.getCollection("users").deleteOne(or(
+         DeleteResult deleteResult;
+         if(isHexadecimal(delete)){
+           deleteResult = database.getCollection("users").deleteOne(new Document("_id", new ObjectId(delete)));
+         } else{
+            deleteResult = database.getCollection("users").deleteOne(or(
                                         eq("username", delete),
-                                        eq("email", delete),
-                                        eq("_id", delete)));
-                                if (deleteResult.getDeletedCount() > 0) {
-                                    System.out.println("user deleted successfully!");
-                                } else {
-                                    System.out.println("No user deleted.");
-                                }
+                                        eq("email", delete))
+                                    );
+         }
+
+        if (deleteResult.getDeletedCount() > 0) {
+            System.out.println("user deleted successfully!");
+        } else {
+            System.out.println("No user deleted.");
+        }
     }
 
     private void update(MongoDatabase database, String update, Document updateDoc){
-            UpdateResult updateResult = database.getCollection("users").updateOne(
+            UpdateResult updateResult;
+            
+            if (isHexadecimal(update)) {
+                updateResult = database.getCollection("users").updateOne(
+                    eq("_id", new ObjectId(update)), new Document("$set", updateDoc));
+            } else {
+                updateResult = database.getCollection("users").updateOne(
                     or(
-                        eq("_id", update), 
                         eq("email", update),
                         eq("username", update)
                     ),
                     new Document("$set", updateDoc));
+            }
 
             if (updateResult.getModifiedCount() > 0) {
                 System.out.println("user updated successfully!");
