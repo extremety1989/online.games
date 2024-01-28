@@ -219,7 +219,7 @@ public class BulkData {
     public void createMockUser(MongoDatabase database) {
         List <Document> users = new ArrayList<Document>();
         
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 50; i++) {
             Faker faker = new Faker();
             String firstName = faker.name().firstName();
             String lastName = faker.name().lastName();
@@ -249,11 +249,11 @@ public class BulkData {
 
         for (Document user : users) {
             for (Document game: games){
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 5; i++) {
                     Faker faker = new Faker();
                     String bankName = bankNames.get(faker.random().nextInt(bankNames.size()));
                     Integer bankNumber = faker.number().numberBetween(100000000, 999999999);
-                    Double amout = faker.number().randomDouble(2, 1, 10000);
+                    Double amout = prices.get(faker.random().nextInt(prices.size()));
                     String currency = "EUR";
                     Document purchase = new Document();
                 
@@ -281,7 +281,7 @@ public class BulkData {
 
         for (Document user : users) {
             for (Document game : games) {
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 5; i++) {
                     Faker faker = new Faker();
                     String comment = faker.lorem().sentence();
                     Document commentDoc = new Document();
@@ -304,17 +304,19 @@ public class BulkData {
         List <Document> ratings = new ArrayList<Document>();
 
         for (Document user : users) {
-            for (int i = 0; i < 10; i++) {
-                Faker faker = new Faker();
-                Integer rating = faker.number().numberBetween(1, 5);
-                Document ratingDoc = new Document();
-                ratingDoc.append("created_at", new Date());
-                ratingDoc.append("user_id", user.get("_id"));
-                ratingDoc.append("game_id", gameNames.get(faker.random().nextInt(games.size())))
-                .append("rating", rating);
-
-                ratings.add(ratingDoc);
-            }   
+            for (Document game : games){
+                for (int i = 0; i < 5; i++) {
+                    Faker faker = new Faker();
+                    Integer rating = faker.number().numberBetween(1, 5);
+                    Document ratingDoc = new Document();
+                    ratingDoc.append("created_at", new Date());
+                    ratingDoc.append("user_id", user.get("_id"));
+                    ratingDoc.append("game_id", game.get("_id"));
+                    ratingDoc.append("rating", rating);
+    
+                    ratings.add(ratingDoc);
+                }   
+            }
         }
 
         database.getCollection("ratings").insertMany(ratings);

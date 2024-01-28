@@ -232,24 +232,31 @@ public class Purchase {
                                         eq("email", id_or_username_or_email_or_gamename))
                            ).first();
         }
+        long totalDocuments;
         if(found == null){
             found = database.getCollection("games").find(eq("name", id_or_username_or_email_or_gamename)).first();
+            totalDocuments = database
+            .getCollection("purchases")
+            .countDocuments(
+    
+
+                        eq("game_id", found.get("_id"))
+                        
+            );
+        }else{
+            totalDocuments = database
+            .getCollection("purchases")
+            .countDocuments(
+
+                        eq("user_id", found.get("_id"))
+         
+                        
+            );
         }
         int pageSize = 5;
 
-        long totalDocuments;
-        if (isHexadecimal(id_or_username_or_email_or_gamename)){
-            totalDocuments = database
-                .getCollection("purchases")
-                .countDocuments(eq("user_id", new ObjectId(id_or_username_or_email_or_gamename)));
-        } else{
-            totalDocuments = database
-                .getCollection("purchases")
-                .countDocuments(or(
-                        eq("username", id_or_username_or_email_or_gamename),
-                        eq("email", id_or_username_or_email_or_gamename)));
-        }
-                        
+
+      
         int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
         System.out.printf("Total purchases: %d\n", totalDocuments);
         if (totalPages == 0) {
@@ -269,7 +276,7 @@ public class Purchase {
                 int skipDocuments = (currentPage - 1) * pageSize;
 
                 Document foundUser; 
-                
+                FindIterable<Document> page;
                 if (isHexadecimal(id_or_username_or_email_or_gamename)){
                     foundUser = database.getCollection("users").find(
                     
@@ -285,7 +292,6 @@ public class Purchase {
                 }
               
 
-
                 Document foundGame = null;
                 if (foundUser == null) {
                     foundGame = database.getCollection("games").find(
@@ -294,26 +300,37 @@ public class Purchase {
                         System.out.println("User or game not found.");
                         return;
                     }
+                    FindIterable<Document> dd = database.getCollection("purchases")
+                    .find(
+                        
+             
+                                    eq("game_id", foundGame.get("_id")));
+           
+                    page = dd.skip(skipDocuments).limit(pageSize);
+                    
+                }else{
+                    FindIterable<Document> dd = database.getCollection("purchases")
+                    .find(
+                  
+                                    eq("user_id", foundUser.get("_id")));
+                        
+                    page = dd.skip(skipDocuments).limit(pageSize);
                 }
 
-                FindIterable<Document> page = database.getCollection("purchases")
-                        .find(
-                                or(
-                                        eq("user_id", foundUser.get("_id")),
-                                        eq("game_id", foundGame.get("_id"))))
-                        .skip(skipDocuments).limit(pageSize);
+         
 
                 for (Document p : page) {
                     Object id = p.get("_id");
-                    System.out.printf("%-29s %-40s %-5s %-3s %-6s\n",
+                    Document temp = p.get("bank", Document.class);
+                    System.out.printf("%-29s %-20s %-5s %-3s %-6s\n",
                             id.toString(),
-                            p.getString("name"),
-                            p.getInteger("number"),
+                            temp.get("name"),
+                            temp.get("number"),
                             p.getDouble("amount"),
                             p.getString("currency"),
-                            p.getString("created_at"));
+                            p.getDate("created_at"));
                 }
-
+                
                 // Pagination controls
                 System.out.println(
                         "----------------------------------------------------------------------------------------------------------------------------------------------------");
@@ -383,15 +400,16 @@ public class Purchase {
                         .limit(pageSize);
                 for (Document p : page) {
                     Object id = p.get("_id");
+                    Document temp = p.get("bank", Document.class);
                     System.out.printf("%-29s %-29s %-29s %-40s %-9i %-5s %-3s %-6s\n",
                             id.toString(),
                             p.getString("user_id"),
                             p.getString("game_id"),
-                            p.getString("name"),
-                            p.getInteger("number"),
+                            temp.get("name"),
+                            temp.get("number"),
                             p.getDouble("amount"),
                             p.getString("currency"),
-                            p.getString("created_at"));
+                            p.getDate("created_at"));
                 }
 
                 // Pagination controls

@@ -47,16 +47,16 @@ public class Rating {
                             scanner.nextLine(); 
                             if (sub_option == 1) {
                                 System.out.print("Enter user-id or username or email: ");
-                                String id_or_username_or_email = scanner.nextLine();
+                                String username_or_email = scanner.nextLine();
                                 System.out.print("Enter the game-name or game-id that he wants to rate: ");
-                                String gameName_or_gameId = scanner.nextLine();
+                                String gameName = scanner.nextLine();
                                 System.out.print("Enter rating: (1-5)");
                                 Integer rating = scanner.nextInt();
                                 if (rating < 1 || rating > 5) {
                                     System.out.println("Invalid rating. Please try again.");
                                     break;
                                 }
-                                this.createRating(database, id_or_username_or_email, gameName_or_gameId, rating);
+                                this.createRating(database, username_or_email, gameName, rating);
                             }
                             else if (sub_option == 2) {
 
@@ -88,22 +88,18 @@ public class Rating {
     }
 
     
-    private void createRating(MongoDatabase database, String id_or_username_or_email, String gameName_or_gameId, Integer rating){
+    private void createRating(MongoDatabase database, String username_or_email, String gameName, Integer rating){
         Document found_user = database.getCollection("users").find(
             or(
-                eq("_id", id_or_username_or_email),
-                eq("username", id_or_username_or_email),
-                eq("email", id_or_username_or_email)
+                eq("username", username_or_email),
+                eq("email", username_or_email)
             )
             ).first();
 
         if (found_user != null) {
 
             Document found_game = database.getCollection("games").find(
-                  or(  
-                    eq("_id", gameName_or_gameId),
-                    eq("name", gameName_or_gameId)
-                  )
+                eq("name", gameName)
                 ).first();
                 if (found_game != null) {
                     Document new_rating = new Document();
@@ -142,9 +138,9 @@ public class Rating {
             while (paginating) {
                
                 System.out.println("\n");
-                System.out.printf("%-29s %-29s %-29s %-i1 %-s\n", "Id", "User Id", "Game id", "Rating", "Date");
+                System.out.printf("%-29s %-29s %-29s %-1s %-6s\n", "Id", "User Id", "Game id", "Rating", "Date");
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "-----------------------------------------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
                 FindIterable<Document> page = database.getCollection("ratings").find()
@@ -152,17 +148,19 @@ public class Rating {
                 .limit(pageSize);
                 for (Document p : page) {
                     Object id = p.get("_id");
-                    System.out.printf("%-29s %-29s %-29s %-1i %-s\n",
-                            id.toString(),
-                            p.getString("user_id"),
-                            p.getString("game_id"),
-                            p.getString("rating"),
-                            p.getInteger("created_at"));
+                    Object user_id = p.get("user_id");
+                    Object game_id = p.get("game_id");
+                    System.out.printf("%-29s %-29s %-29s %-1s %-6s\n",
+                            id,
+                            user_id,
+                            game_id,
+                            p.get("rating"),
+                            p.get("created_at"));
                 }
 
                 // Pagination controls
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "-----------------------------------------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");
@@ -221,9 +219,9 @@ public class Rating {
             while (paginating) {
                
                 System.out.println("\n");
-                System.out.printf("%-29s %-29s %-29s %-i1 %-s\n", "Id", "User Id", "Game id", "Rating", "Date");
+                System.out.printf("%-29s %-29s %-29s %-1s %-6s\n", "Id", "User Id", "Game id", "Rating", "Date");
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "-----------------------------------------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
                 Document foundUser = database.getCollection("users").find(
@@ -243,26 +241,40 @@ public class Rating {
                     }
                 }
         
-                FindIterable<Document> page = database.getCollection("ratings")
-                .find(
-                   or(
-                        eq("user_id", new ObjectId(foundUser.get("_id").toString())),
-                        eq("game_id", new ObjectId(foundGame.get("_id").toString()))
-                   )
-                ).skip(skipDocuments).limit(pageSize);
+                FindIterable<Document> page;
+                
+                if(foundGame != null){
+                    page = database.getCollection("ratings")
+                    .find(
+                    
+
+                            eq("game_id", new ObjectId(foundGame.get("_id").toString()))
+                       
+                    ).skip(skipDocuments).limit(pageSize);
+                }else{
+                    page = database.getCollection("ratings")
+                    .find(
+                  
+                            eq("user_id", new ObjectId(foundUser.get("_id").toString()))
+        
+                   
+                    ).skip(skipDocuments).limit(pageSize);
+                }
         
                 for (Document p : page) {
                     Object id = p.get("_id");
-                    System.out.printf("%-29s %-29s %-29s %-1i %-s\n",
-                            id.toString(),
-                            p.getString("user_id"),
-                            p.getString("game_id"),
-                            p.getString("rating"),
-                            p.getInteger("created_at"));
+                    Object user_id = p.get("user_id");
+                    Object game_id = p.get("game_id");
+                    System.out.printf("%-29s %-29s %-29s %-1s %-6s\n",
+                            id,
+                            user_id,
+                            game_id,
+                            p.get("rating"),
+                            p.get("created_at"));
                 }
                 // Pagination controls
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "-----------------------------------------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");
@@ -300,7 +312,7 @@ public class Rating {
 
 
     private void delete(MongoDatabase database, String delete) {
-        DeleteResult deleteResult = database.getCollection("ratings").deleteOne( eq("_id", delete));
+        DeleteResult deleteResult = database.getCollection("ratings").deleteOne( eq("_id", new ObjectId(delete)));
         if (deleteResult.getDeletedCount() > 0) {
             System.out.println("rating deleted successfully!");
         } else {
@@ -313,7 +325,7 @@ public class Rating {
         if(isHexadecimal(delete)){
             foundUser = database.getCollection("users").find(
                 or(
-                    eq("_id", delete)
+                    eq("_id", new ObjectId(delete))
                 )
             ).first();
         }else{
@@ -327,7 +339,7 @@ public class Rating {
         Document foundGame;
         if(isHexadecimal(delete)){
             foundGame =  database.getCollection("games").find(
-                eq("_id", delete)
+                eq("_id", new ObjectId(delete))
             ).first();
         }else{
             foundGame =  database.getCollection("games").find(

@@ -286,7 +286,7 @@ public class Game {
 
                 System.out.println("\n");
                 System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n", "Id", "Name", "Price", "Category",
-                        "Age Restriction", "Total");
+                        "Age Restriction", "Total sold");
                 System.out.println(
                         "---------------------------------------------------------------------------------------------------------");
 
@@ -294,7 +294,7 @@ public class Game {
                 FindIterable<Document> pagegames = database.getCollection("games").find()
                         .skip(skipDocuments)
                         .limit(pageSize);
-
+               
                 for (Document game : pagegames) {
                     Object id = game.get("_id");
                     Document category = game.get("category", Document.class);
@@ -366,7 +366,7 @@ public class Game {
 
                 System.out.println("\n");
                 System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n", "Id", "Name", "Price", "Category",
-                "Age Restriction", "Total");
+                "Age Restriction", "Total sold");
                 System.out.println(
                         "---------------------------------------------------------------------------------------------------------");
 
@@ -444,7 +444,7 @@ public class Game {
 
                 System.out.println("\n");
                 System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n", "Id", "Name", "Price", "Category",
-                "Age Restriction", "Total");
+                "Age Restriction", "Total sold");
                 System.out.println(
                         "---------------------------------------------------------------------------------------------------------");
 
@@ -520,7 +520,7 @@ public class Game {
 
                 System.out.println("\n");
                 System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n", "Id", "Name", "Price", "Category",
-                "Age Restriction", "Total");
+                "Age Restriction", "Total sold");
                 System.out.println(
                         "---------------------------------------------------------------------------------------------------------");
 

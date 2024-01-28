@@ -232,7 +232,7 @@ public class User {
             long totalPurchases = database.getCollection("purchases").countDocuments(eq("user_id", found.get("_id")));
             System.out.println(
                 "Id: " + found.get("_id").toString()
-            + "Lastname: " + found.getString("lastname") 
+            + " Lastname: " + found.getString("lastname") 
             + " Firstname: "  +  found.getString("firstname") 
             + " Age: " + found.getInteger("age")
             + " Email: " + found.getString("email") 
