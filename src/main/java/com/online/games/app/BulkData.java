@@ -245,11 +245,12 @@ public class BulkData {
                 Double amout = faker.number().randomDouble(2, 1, 10000);
                 String currency = "EUR";
                 Document purchase = new Document();
+                purchase.append("created_at", faker.date().birthday());
                 purchase.append("user_id", user.get("_id"));
                 purchase.append("game_id", gameNames.get(faker.random().nextInt(games.size()) + 1))
-                .append("bankName", bankName)
-                .append("bankNumber", bankNumber)
-                .append("amount", amout)
+                .append("bank", new Document().append("name", bankName).append("number", bankNumber));
+
+                purchase.append("amount", amout)
                 .append("currency", currency);
 
                 purchases.add(purchase);
@@ -267,6 +268,7 @@ public class BulkData {
                 Faker faker = new Faker();
                 String comment = faker.lorem().sentence();
                 Document commentDoc = new Document();
+                commentDoc.append("created_at", faker.date().birthday());
                 commentDoc.append("user_id", user.get("_id"));
                 commentDoc.append("game_id", gameNames.get(faker.random().nextInt(games.size()) + 1))
                 .append("comment", comment);
@@ -286,6 +288,7 @@ public class BulkData {
                 Faker faker = new Faker();
                 Integer rating = faker.number().numberBetween(1, 5);
                 Document ratingDoc = new Document();
+                ratingDoc.append("created_at", faker.date().birthday());
                 ratingDoc.append("user_id", user.get("_id"));
                 ratingDoc.append("game_id", gameNames.get(faker.random().nextInt(games.size()) + 1))
                 .append("rating", rating);

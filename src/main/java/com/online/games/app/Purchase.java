@@ -108,11 +108,11 @@ public class Purchase {
                     new_purchase.append("amount", amount)
                             .append("currency", currency);
                     if (bankName != null && bankNumber != null) {
-                        new_purchase.append("bankName", bankName)
-                                .append("bankNumber", bankNumber);
+                        new_purchase.append("bank", new Document().append("name", bankName).append("number",
+                         bankNumber));
                     }
 
-                    new_purchase.append("date", new Date())
+                    new_purchase.append("created_at", new Date())
                             .append("user_id", found_user.get("_id"))
                             .append("game_id", found_game.get("_id"));
 
@@ -152,7 +152,8 @@ public class Purchase {
             while (paginating) {
 
                 System.out.println("\n");
-                System.out.printf("%-29s %-20s %-20s %-5s\n", "Id", "Lastname", "Firstname", "Age");
+                System.out.printf("%-29s %-29s %-29s %-40s %-5d %-3s %-s\\n" + //
+                        "", "Id", "Game Id", "User Id", "Bank Name", "Bank Number", "Currency", "created_at");
                 System.out.println(
                         "----------------------------------------------------------------------------");
 
@@ -162,16 +163,17 @@ public class Purchase {
                 .limit(pageSize);
         for (Document p : page) {
             Object id = p.get("_id");
-            System.out.printf("%-29s %-29s %-29s %-40s %-5d %-3s %-s\n",
-                    id.toString(),
-                    p.getString("user_id"),
-                    p.getString("game_id"),
-                    p.getString("bankName"),
-                    p.getInteger("bankNumber"),
-                    p.getDouble("amount"),
-                    p.getString("currency"),
-                    p.getString("date"));
-        }
+            Document temp = p.get("bank", Document.class);
+                System.out.printf("%-29s %-29s %-29s %-40s %-5d %-3s %-s\n",
+                        id.toString(),
+                        p.getString("game_id"),
+                        p.getString("user_id"),
+                     
+                        temp.getString("bankName"),
+                        temp.getInteger("bankNumber"),
+                        p.getString("currency"),
+                        p.getString("created_at"));
+            }
 
                 // Pagination controls
                 System.out.println(
@@ -271,7 +273,7 @@ public class Purchase {
                             p.getInteger("bankNumber"),
                             p.getDouble("amount"),
                             p.getString("currency"),
-                            p.getString("date"));
+                            p.getString("created_at"));
                 }
 
                 // Pagination controls
@@ -320,7 +322,7 @@ public class Purchase {
         int pageSize = 5;
         long totalDocuments = database
                 .getCollection("purchases")
-                .countDocuments(eq("date", date));
+                .countDocuments(eq("created_at", date));
         int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
         System.out.printf("Total purchases: %d\n", totalDocuments);
         if (totalPages == 0) {
@@ -338,7 +340,7 @@ public class Purchase {
                         "----------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> page = database.getCollection("purchases").find(eq("date", date))
+                FindIterable<Document> page = database.getCollection("purchases").find(eq("created_at", date))
                         .skip(skipDocuments)
                         .limit(pageSize);
                 for (Document p : page) {
@@ -351,7 +353,7 @@ public class Purchase {
                             p.getInteger("bankNumber"),
                             p.getDouble("amount"),
                             p.getString("currency"),
-                            p.getString("date"));
+                            p.getString("created_at"));
                 }
 
                 // Pagination controls

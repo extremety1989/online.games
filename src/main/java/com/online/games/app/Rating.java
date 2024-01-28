@@ -149,7 +149,7 @@ public class Rating {
                             p.getString("user_id"),
                             p.getString("game_id"),
                             p.getString("rating"),
-                            p.getInteger("date"));
+                            p.getInteger("created_at"));
                 }
 
                 // Pagination controls
@@ -251,7 +251,7 @@ public class Rating {
                             p.getString("user_id"),
                             p.getString("game_id"),
                             p.getString("rating"),
-                            p.getInteger("date"));
+                            p.getInteger("created_at"));
                 }
                 // Pagination controls
                 System.out.println(
