@@ -18,7 +18,7 @@ public class Rating {
 
 
     public void run(Scanner scanner, MongoDatabase database){
-                        // Users management
+              
                         boolean sub_exit = false;
 
                         while (!sub_exit) {

@@ -106,7 +106,7 @@ public class Comment {
             while (paginating) {
                
                 System.out.println("\n");
-                System.out.printf("%-29s %-29s %-29s %-20s %-s\n", "Id", "User Id", "Game Id", "Comment", "Date");
+                System.out.printf("%-29s %-29s %-29s %-20s %-s\n", "Id", "Game Id", "User Id", "Comment", "Date");
                 System.out.println(
                         "----------------------------------------------------------------------------");
 
@@ -133,8 +133,8 @@ public class Comment {
                     Object id = p.get("_id");
                     System.out.printf("%-29s %-29s %-29s %-20s %-s\n",
                             id.toString(),
-                            p.getString("user_id"),
                             p.getString("game_id"),
+                            p.getString("user_id"),
                             p.getString("comment"),
                             p.getString("date"));
                 }
@@ -190,7 +190,7 @@ public class Comment {
             while (paginating) {
                
                 System.out.println("\n");
-                System.out.printf("%-29s %-29s %-29s %-20s %-5\n", "Id", "User Id","Game Id", "Comment", "Date");
+                System.out.printf("%-29s %-29s %-29s %-20s %-5\n", "Id", "Game Id", "User Id", "Comment", "Date");
                 System.out.println(
                         "----------------------------------------------------------------------------");
 
@@ -202,8 +202,9 @@ public class Comment {
                     Object id = p.get("_id");
                     System.out.printf("%-29s %-29s %-29s  %-20s %-s\n",
                             id.toString(),
-                            p.getString("user_id"),
                             p.getString("game_id"),
+                            p.getString("user_id"),
+                        
                             p.getString("comment"),
                             p.getString("date"));
                 }
@@ -304,7 +305,7 @@ public class Comment {
             while (paginating) {
                
                 System.out.println("\n");
-                System.out.printf("%-29s %-20s %-20s %-5s\n", "Id", "User Id", "Comment", "Date");
+                System.out.printf("%-29s %-29s %-20s %-20s %-5s\n", "Id", "Game Id","User Id", "Comment", "Date");
                 System.out.println(
                         "----------------------------------------------------------------------------");
 
@@ -314,6 +315,7 @@ public class Comment {
                     Object id = p.get("_id");
                     System.out.printf("%-29s %-20s %-20s %-5s\n",
                             id.toString(),
+                            p.getString("game_id"),
                             p.getString("user_id"),
                             p.getString("comment"),
                             p.getString("date"));
