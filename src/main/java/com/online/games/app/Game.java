@@ -244,7 +244,7 @@ public class Game {
                                 .append("number", bankNumber));
                     }
                     
-                    new_purchase.append("date", new Date())
+                    new_purchase.append("created_at", new Date())
                             .append("user_id", new ObjectId(found_user.get("_id").toString()))
                             .append("game_id", new ObjectId(found_game.get("_id").toString()));
 

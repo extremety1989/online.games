@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import com.mongodb.client.FindIterable;
 
@@ -161,32 +162,28 @@ public class Purchase {
             while (paginating) {
 
                 System.out.println("\n");
-                System.out.printf("%-29s %-29s %-29s %-40s %-5d %-3s %-6s\n" + //
-                        "", "Id", "Game Id", "User Id", "Bank Name", "Bank Number", "Currency", "created_at");
+                System.out.printf("%-30s %-30s %-30s %-5s %-3s %-6s\n" + //
+                        "", "User Id", "Bank Name", "Bank Number", "Currency", "created_at");
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "----------------------------------------------------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
                 FindIterable<Document> page = database.getCollection("purchases").find()
                 .skip(skipDocuments)
                 .limit(pageSize);
         for (Document p : page) {
-            Object id = p.get("_id");
             Document temp = p.get("bank", Document.class);
-                System.out.printf("%-29s %-29s %-29s %-40s %-5d %-3s %-6s\n",
-                        id.toString(),
-                        p.getString("game_id"),
-                        p.getString("user_id"),
-                     
-                        temp.getString("bankName"),
-                        temp.getInteger("bankNumber"),
-                        p.getString("currency"),
-                        p.getString("created_at"));
+            System.out.print(p.get("user_id"));
+            System.out.print(temp.get("name"));
+            System.out.print(temp.get("number"));
+            System.out.print(p.get("currency"));
+            System.out.print(p.get("created_at"));
+            System.out.println();
             }
 
                 // Pagination controls
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "----------------------------------------------------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");
@@ -224,16 +221,35 @@ public class Purchase {
 
     private void readByUserOrGame(Scanner scanner, MongoDatabase database) {
         System.out.println("\n");
-        System.out.print("Enter username or email or game-name of purchases to search: ");
-        String username_or_email_or_gamename = scanner.nextLine();
-
+        System.out.print("Enter user-id or username or email or game-name of purchases to search: ");
+        String id_or_username_or_email_or_gamename = scanner.nextLine();
+        Document found = null;
+        if(isHexadecimal(id_or_username_or_email_or_gamename)){
+            found = database.getCollection("users").find(eq("_id", new ObjectId(id_or_username_or_email_or_gamename))).first();
+        } else{
+            found = database.getCollection("users").find(or(
+                                        eq("username", id_or_username_or_email_or_gamename),
+                                        eq("email", id_or_username_or_email_or_gamename))
+                           ).first();
+        }
+        if(found == null){
+            found = database.getCollection("games").find(eq("name", id_or_username_or_email_or_gamename)).first();
+        }
         int pageSize = 5;
-        long totalDocuments = database
+
+        long totalDocuments;
+        if (isHexadecimal(id_or_username_or_email_or_gamename)){
+            totalDocuments = database
+                .getCollection("purchases")
+                .countDocuments(eq("user_id", new ObjectId(id_or_username_or_email_or_gamename)));
+        } else{
+            totalDocuments = database
                 .getCollection("purchases")
                 .countDocuments(or(
-                        eq("user_id", username_or_email_or_gamename),
-                        eq("username", username_or_email_or_gamename),
-                        eq("email", username_or_email_or_gamename)));
+                        eq("username", id_or_username_or_email_or_gamename),
+                        eq("email", id_or_username_or_email_or_gamename)));
+        }
+                        
         int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
         System.out.printf("Total purchases: %d\n", totalDocuments);
         if (totalPages == 0) {
@@ -245,22 +261,35 @@ public class Purchase {
             while (paginating) {
 
                 System.out.println("\n");
-                System.out.printf("%-29s %-40s %-5d %-3s %-6s\n", "Id", "Bank Name", "Bank Number", "Amount",
+                System.out.printf("%-29s %-40s %-5s %-3s %-6s\n", "Id", "Bank Name", "Bank Number", "Amount",
                         "Currency", "Date");
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "----------------------------------------------------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
 
-                Document foundUser = database.getCollection("users").find(
-                        or(
-                                eq("username", username_or_email_or_gamename),
-                                eq("email", username_or_email_or_gamename)))
+                Document foundUser; 
+                
+                if (isHexadecimal(id_or_username_or_email_or_gamename)){
+                    foundUser = database.getCollection("users").find(
+                    
+                                eq("_id", new ObjectId(id_or_username_or_email_or_gamename)),
+                               )
                         .first();
+                } else{
+                    foundUser = database.getCollection("users").find(
+                        or(
+                                eq("username", id_or_username_or_email_or_gamename),
+                                eq("email", id_or_username_or_email_or_gamename)))
+                        .first();
+                }
+              
+
+
                 Document foundGame = null;
                 if (foundUser == null) {
                     foundGame = database.getCollection("games").find(
-                            eq("name", username_or_email_or_gamename)).first();
+                            eq("name", id_or_username_or_email_or_gamename)).first();
                     if (foundGame == null) {
                         System.out.println("User or game not found.");
                         return;
@@ -270,16 +299,16 @@ public class Purchase {
                 FindIterable<Document> page = database.getCollection("purchases")
                         .find(
                                 or(
-                                        eq("user_id", foundUser.get("_id").toString()),
-                                        eq("game_id", foundGame.get("_id").toString())))
+                                        eq("user_id", foundUser.get("_id")),
+                                        eq("game_id", foundGame.get("_id"))))
                         .skip(skipDocuments).limit(pageSize);
 
                 for (Document p : page) {
                     Object id = p.get("_id");
-                    System.out.printf("%-29s %-40s %-5d %-3s %-6s\n",
+                    System.out.printf("%-29s %-40s %-5s %-3s %-6s\n",
                             id.toString(),
-                            p.getString("bankName"),
-                            p.getInteger("bankNumber"),
+                            p.getString("name"),
+                            p.getInteger("number"),
                             p.getDouble("amount"),
                             p.getString("currency"),
                             p.getString("created_at"));
@@ -287,7 +316,7 @@ public class Purchase {
 
                 // Pagination controls
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "----------------------------------------------------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");
@@ -343,10 +372,10 @@ public class Purchase {
             while (paginating) {
 
                 System.out.println("\n");
-                System.out.printf("%-29s %-29s %-29s %-40s %-9i %-5d %-3s %-6s\n", "Id", "User Id", "Game Id",
+                System.out.printf("%-29s %-29s %-29s %-40s %-9i %-5s %-3s %-6s\n", "Id", "User Id", "Game Id",
                         "Bank Name", "Bank Number", "Amount", "Currency", "Date");
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "----------------------------------------------------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
                 FindIterable<Document> page = database.getCollection("purchases").find(eq("created_at", date))
@@ -354,12 +383,12 @@ public class Purchase {
                         .limit(pageSize);
                 for (Document p : page) {
                     Object id = p.get("_id");
-                    System.out.printf("%-29s %-29s %-29s %-40s %-9i %-5d %-3s %-6s\n",
+                    System.out.printf("%-29s %-29s %-29s %-40s %-9i %-5s %-3s %-6s\n",
                             id.toString(),
                             p.getString("user_id"),
                             p.getString("game_id"),
-                            p.getString("bankName"),
-                            p.getInteger("bankNumber"),
+                            p.getString("name"),
+                            p.getInteger("number"),
                             p.getDouble("amount"),
                             p.getString("currency"),
                             p.getString("created_at"));
@@ -367,7 +396,7 @@ public class Purchase {
 
                 // Pagination controls
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "----------------------------------------------------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");

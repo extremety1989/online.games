@@ -3,6 +3,7 @@ package com.online.games.app;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.or;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -191,6 +192,7 @@ public class User {
 
         System.out.println("\n");
         int pageSize = 5;
+       
         long totalDocuments = database.getCollection("users").countDocuments();
         int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
         System.out.printf("Total users: %d\n", totalDocuments);

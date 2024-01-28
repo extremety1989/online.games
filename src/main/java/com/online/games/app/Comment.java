@@ -35,13 +35,11 @@ public class Comment {
                             System.out.println("Choose an operation:");
                             System.out.println("1: Create comment");
                             System.out.println("2: Delete comment");
-                            System.out.println("3: Delete All comments by user");
+                            System.out.println("3: Delete All comments by user-id or username or email");
                             System.out.println("4: List All comments");
-
-                            System.out.println("5: List All comments by date");
-                            System.out.println("6: List All comments by user or game");
+                            System.out.println("5: List All comments by user or game");
+                            System.out.println("6: List All comments by date");
                           
-                
                             System.out.println("0: Return to main menu");
                             System.out.print("Enter option: ");
 
@@ -65,19 +63,20 @@ public class Comment {
                               
                             } 
                             else if (sub_option == 3){
-                                System.out.print("Enter id, username or email of user to delete all his/her comments: ");
+                                System.out.print("Enter user-id or username or email or game-id or game-name to delete all his/her comments: ");
                                 String delete = scanner.nextLine();
-                                this.deleteByUserIdOrUsernameOrEmail(database, delete);
+                                this.deleteByUserOrGame(database, delete);
                             }
                             
                             else if (sub_option == 4) {
                                 this.read(scanner, database);
                             } 
                             else if (sub_option == 5) {
-                                this.readByDate(scanner, database);
+                                this.readCommentSByIdOrUsernameOrEmailORGame(scanner, database);
                             } 
                             else if (sub_option == 6){
-                                this.readCommentSByUserORGame(scanner, database);
+                           
+                                this.readByDate(scanner, database);
                             }
                             else if (sub_option == 0) {
                                 sub_exit = true;
@@ -89,20 +88,46 @@ public class Comment {
                         }
     }
 
-    private void readCommentSByUserORGame(Scanner scanner, MongoDatabase database){
+    private void readCommentSByIdOrUsernameOrEmailORGame(Scanner scanner, MongoDatabase database){
         
         System.out.println("\n");
-        System.out.print("Enter username or email or game-name of comments to search: ");
-        String username_or_email_or_gamename = scanner.nextLine();
+        System.out.print("Enter user-id or username or email or game-id or game-name to search: ");
+        String id_or_username_or_email_or_gamename = scanner.nextLine();
 
         int pageSize = 5;
-        long totalDocuments = database
+        long totalDocuments = 0;
+        if (isHexadecimal(id_or_username_or_email_or_gamename)) {
+            totalDocuments = database
                         .getCollection("comments")
                         .countDocuments(or(
-                            eq("user_id", username_or_email_or_gamename),
-                            eq("username", username_or_email_or_gamename),
-                            eq("email", username_or_email_or_gamename)
+                            eq("user_id", id_or_username_or_email_or_gamename),
+                            eq("game_id", id_or_username_or_email_or_gamename)
                         ));
+            if(totalDocuments == 0){
+                Document foundGame =  database.getCollection("games").find(
+                    eq("_id", id_or_username_or_email_or_gamename)
+                ).first();
+                totalDocuments = database
+                        .getCollection("comments")
+                        .countDocuments(eq("game_id", foundGame.get("_id").toString()));
+            }
+        }else{
+            totalDocuments = database
+                        .getCollection("comments")
+                        .countDocuments(or(
+                            eq("username", id_or_username_or_email_or_gamename),
+                            eq("email", id_or_username_or_email_or_gamename)
+                        ));
+                        if(totalDocuments == 0){
+                            Document foundGame =  database.getCollection("games").find(
+                                eq("name", id_or_username_or_email_or_gamename)
+                            ).first();
+                            totalDocuments = database
+                                    .getCollection("comments")
+                                    .countDocuments(eq("game_id", foundGame.get("_id").toString()));
+                        }
+        }
+
         int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
         System.out.printf("Total comments: %d\n", totalDocuments);
         if (totalPages == 0) {
@@ -116,18 +141,38 @@ public class Comment {
                 System.out.println("\n");
                 System.out.printf("%-29s %-29s %-29s %-20s %-s\n", "Id", "Game Id", "User Id", "Comment", "Date");
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "------------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
-                Document foundUser = database.getCollection("users").find(
-                    or(
-                        eq("username", username_or_email_or_gamename),
-                        eq("email", username_or_email_or_gamename)
-                    )
-                ).first();
-                Document foundGame =  database.getCollection("games").find(
-                    eq("name", username_or_email_or_gamename)
-                ).first();
+
+                Document foundUser;
+                if(isHexadecimal(id_or_username_or_email_or_gamename)){
+                    foundUser = database.getCollection("users").find(
+                        or(
+                            eq("_id", id_or_username_or_email_or_gamename)
+                        )
+                    ).first();
+                }else{
+                    foundUser = database.getCollection("users").find(
+                        or(
+                            eq("username", id_or_username_or_email_or_gamename),
+                            eq("email", id_or_username_or_email_or_gamename)
+                        )
+                    ).first();
+                }
+
+                Document foundGame;
+                if (isHexadecimal(id_or_username_or_email_or_gamename)) {
+                    foundGame =  database.getCollection("games").find(
+                        eq("_id", id_or_username_or_email_or_gamename)
+                    ).first();
+
+                }else{
+                    foundGame =  database.getCollection("games").find(
+                        eq("name", id_or_username_or_email_or_gamename)
+                    ).first();
+                }
+    
                
                 FindIterable<Document> page = database.getCollection("comments")
                 .find(
@@ -148,7 +193,7 @@ public class Comment {
                 }
                 // Pagination controls
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "------------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");
@@ -200,7 +245,7 @@ public class Comment {
                 System.out.println("\n");
                 System.out.printf("%-29s %-29s %-29s %-20s %-5\n", "Id", "Game Id", "User Id", "Comment", "Date");
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "------------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
                 FindIterable<Document> page = database.getCollection("comments").find()
@@ -219,7 +264,7 @@ public class Comment {
 
                 // Pagination controls
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "------------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");
@@ -274,7 +319,7 @@ public class Comment {
                 if (found_game != null) {
                     Document new_comment = new Document();
                     new_comment.append("comment", comment)
-                    .append("date",  new Date())
+                    .append("created_at",  new Date())
                     .append("user_id", found_user.get("_id"))
                     .append("game_id", found_game.get("_id"));
                     InsertOneResult result = database.getCollection("comments").insertOne(new_comment);
@@ -301,7 +346,7 @@ public class Comment {
         int pageSize = 5;
         long totalDocuments = database
                         .getCollection("comments")
-                        .countDocuments(eq("date", date));
+                        .countDocuments(eq("created_at", date));
         int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
         System.out.printf("Total comments: %d\n", totalDocuments);
         if (totalPages == 0) {
@@ -315,10 +360,10 @@ public class Comment {
                 System.out.println("\n");
                 System.out.printf("%-29s %-29s %-20s %-20s %-5s\n", "Id", "Game Id","User Id", "Comment", "Date");
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "------------------------------------------------------------------------------------------------------------");
 
                 int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> page = database.getCollection("comments").find(eq("date", date)).skip(skipDocuments).limit(pageSize);
+                FindIterable<Document> page = database.getCollection("comments").find(eq("created_at", date)).skip(skipDocuments).limit(pageSize);
                 for (Document p : page) {
                     Object id = p.get("_id");
                     System.out.printf("%-29s %-20s %-20s %-5s\n",
@@ -331,7 +376,7 @@ public class Comment {
 
                 // Pagination controls
                 System.out.println(
-                        "----------------------------------------------------------------------------");
+                        "------------------------------------------------------------------------------------------------------------");
                 System.out.print("\n");
                 System.out.printf("Page %d of %d\n", currentPage, totalPages);
                 System.out.print("\n");
@@ -376,14 +421,33 @@ public class Comment {
         }
     }
 
-    private void deleteByUserIdOrUsernameOrEmail(MongoDatabase database, String delete){
-        DeleteResult deleteResult = database.getCollection("comments").deleteMany( 
-            or(
-                eq("user_id", new ObjectId(delete)),
-                eq("username", delete),
-                eq("email", delete)
-            )                
-         );
+    private void deleteByUserOrGame(MongoDatabase database, String delete){
+        DeleteResult deleteResult;
+        if(isHexadecimal(delete)){
+            deleteResult = database.getCollection("comments").deleteMany( 
+                or(
+                    eq("user_id", delete),
+                    eq("game_id", delete)
+                )        
+             );
+        }else{
+            deleteResult = database.getCollection("comments").deleteMany( 
+                or(
+                    eq("username", delete),
+                    eq("email", delete)
+                )                
+             );
+
+             if(deleteResult.getDeletedCount() == 0){
+                Document foundGame =  database.getCollection("games").find(
+                    eq("name", delete)
+                ).first();
+                deleteResult = database.getCollection("comments").deleteMany( 
+                    eq("game_id", foundGame.get("_id").toString())
+                );
+             }
+        }
+
          if (deleteResult.getDeletedCount() > 0) {
              System.out.println("comments deleted successfully!");
          } else {

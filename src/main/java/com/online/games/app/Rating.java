@@ -35,7 +35,7 @@ public class Rating {
                             System.out.println("Choose an operation:");
                             System.out.println("1: Create rating");
                             System.out.println("2: Delete rating");
-                            System.out.println("3: Delete All ratings by user");
+                            System.out.println("3: Delete All ratings by user or game");
                             System.out.println("4: List All ratings");
                             System.out.println("5: List All ratings by user or game");
                           
@@ -66,9 +66,9 @@ public class Rating {
                               
                             } 
                             else if (sub_option == 3){
-                                System.out.print("Enter id, username or email of user to delete all his/her ratings: ");
+                                System.out.print("Enter username or email or game-name to delete all his/her ratings: ");
                                 String delete = scanner.nextLine();
-                                this.deleteAllByUserIdOrUsernameOrEmail(database, delete);
+                                this.deleteAllByUsernameOrEmailOrGame(database, delete);
                             }
                             
                             else if (sub_option == 4) {
@@ -207,7 +207,6 @@ public class Rating {
         long totalDocuments = database
                         .getCollection("ratings")
                         .countDocuments(or(
-                            eq("user_id", username_or_email_or_gamename),
                             eq("username", username_or_email_or_gamename),
                             eq("email", username_or_email_or_gamename)
                         ));
@@ -309,14 +308,31 @@ public class Rating {
         }
     }
 
-    private void deleteAllByUserIdOrUsernameOrEmail(MongoDatabase database, String delete){
-        DeleteResult deleteResult = database.getCollection("ratings").deleteMany( 
+    private void deleteAllByUsernameOrEmailOrGame(MongoDatabase database, String delete){
+        DeleteResult deleteResult;
+        Document found_user = database.getCollection("users").find(
             or(
-                eq("_id", new ObjectId(delete)),
-                eq("user_id", new ObjectId(delete)),
-                eq("game_id", new ObjectId(delete))
-            )                
-         );
+                eq("username", delete),
+                eq("email", delete)
+            )
+        ).first();
+
+        Document found_game = null;
+        if (found_user == null) {
+            found_game = database.getCollection("games").find(
+                eq("name", delete)
+            ).first();
+            if (found_game == null) {
+                System.out.println("User or game not found.");
+                return;
+            }
+        }
+        deleteResult = database.getCollection("ratings").deleteMany(
+            or(
+                eq("user_id", new ObjectId(found_user.get("_id").toString())),
+                eq("game_id", new ObjectId(found_game.get("_id").toString()))
+            )
+        );
          if (deleteResult.getDeletedCount() > 0) {
              System.out.println("ratings deleted successfully!");
          } else {
