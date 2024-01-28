@@ -80,59 +80,10 @@ public class User {
 
                            
                                 System.out.print(
-                                        "Enter lastname or firstname of user to update (or press enter to skip): ");
-                                Document updateDoc = new Document();
-                                String update = scanner.nextLine();
+                                        "Enter user-id or username or email of user (or press enter to skip): ");
+                                
 
-                                System.out.print("Enter new lastname: ");
-                                String newlastname = scanner.nextLine();
-                                System.out.print("Enter new firstname: ");
-                                String newFirstname = scanner.nextLine();
-                                System.out.print("Enter new age: ");
-                                int newAge = 0;
-                                String ageInput = scanner.nextLine();
-                                System.out.print("Enter new email: ");
-                                String newEmail = scanner.nextLine();
-        
-                                System.out.print("Enter new password: ");
-                                String newPassword = scanner.nextLine();
-
-                                if (!ageInput.isEmpty()) {
-                                    newAge = Integer.parseInt(ageInput);
-                                }
-
-                                if (!newlastname.isEmpty()) {
-                                    updateDoc.append("lastname", newlastname);
-                                }
-
-                                if (!newFirstname.isEmpty()) {
-                                    updateDoc.append("firstname", newFirstname);
-                                }
-
-                                if (newAge > 0) {
-                                    updateDoc.append("age", newAge);
-                                }
-
-                                if (!newEmail.isEmpty()) {
-                                    updateDoc.append("email", newEmail);
-                                }
-
-                                if (!newPassword.isEmpty()) {
-                                    MessageDigest messageDigest;
-                                    try {
-                                        messageDigest = MessageDigest.getInstance("SHA-256");
-                                        messageDigest.update(newPassword.getBytes());
-                                        String passwordHash = new String(messageDigest.digest());
-                                        updateDoc.append("password", passwordHash);
-                                    } catch (NoSuchAlgorithmException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-
-                                if (!updateDoc.isEmpty()) {
-                                    this.update(database, update, updateDoc);
-                                }
-                 
+                                this.update(scanner, database);
                             } else if (sub_option == 4) {
                              
                                 System.out.print("Enter id, username or email of user to delete: ");
@@ -315,7 +266,69 @@ public class User {
         }
     }
 
-    private void update(MongoDatabase database, String update, Document updateDoc){
+    private void update(Scanner scanner, MongoDatabase database){
+        Document updateDoc = new Document();
+                                String update = scanner.nextLine();
+            Document found;
+            if (isHexadecimal(update)) {
+                found = database.getCollection("users").find(eq("_id", new ObjectId(update))).first();
+            } else {
+                found = database.getCollection("users").find(or(
+                                            eq("username", update),
+                                            eq("email", update))
+                                        ).first();
+            }
+            if(found == null){
+                System.out.println("No user found.");
+                return;
+            }
+
+
+
+                                System.out.print("Enter new lastname: ");
+                                String newlastname = scanner.nextLine();
+                                System.out.print("Enter new firstname: ");
+                                String newFirstname = scanner.nextLine();
+                                System.out.print("Enter new age: ");
+                                int newAge = 0;
+                                String ageInput = scanner.nextLine();
+                                System.out.print("Enter new email: ");
+                                String newEmail = scanner.nextLine();
+        
+                                System.out.print("Enter new password: ");
+                                String newPassword = scanner.nextLine();
+
+                                if (!ageInput.isEmpty()) {
+                                    newAge = Integer.parseInt(ageInput);
+                                }
+
+                                if (!newlastname.isEmpty()) {
+                                    updateDoc.append("lastname", newlastname);
+                                }
+
+                                if (!newFirstname.isEmpty()) {
+                                    updateDoc.append("firstname", newFirstname);
+                                }
+
+                                if (newAge > 0) {
+                                    updateDoc.append("age", newAge);
+                                }
+
+                                if (!newEmail.isEmpty()) {
+                                    updateDoc.append("email", newEmail);
+                                }
+
+                                if (!newPassword.isEmpty()) {
+                                    MessageDigest messageDigest;
+                                    try {
+                                        messageDigest = MessageDigest.getInstance("SHA-256");
+                                        messageDigest.update(newPassword.getBytes());
+                                        String passwordHash = new String(messageDigest.digest());
+                                        updateDoc.append("password", passwordHash);
+                                    } catch (NoSuchAlgorithmException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
             UpdateResult updateResult;
             
             if (isHexadecimal(update)) {
