@@ -43,7 +43,7 @@ public class App {
                 Purchase purchase = new Purchase();
                 Comment comment = new Comment();
                 Rating rating = new Rating();
-                BulkData bulkData = new BulkData();
+                PopulateData bulkData = new PopulateData();
 
                 boolean exit = false;
                 while (!exit) {

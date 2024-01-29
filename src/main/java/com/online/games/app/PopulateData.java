@@ -18,7 +18,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Updates;
 
-public class BulkData {
+public class PopulateData {
     private final List<String> gameNames = Arrays.asList(
         "Batman: Arkham City",
         "The Witcher 3: Wild Hunt",
