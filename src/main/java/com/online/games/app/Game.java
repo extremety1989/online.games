@@ -18,8 +18,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.client.FindIterable;
+
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
@@ -209,7 +208,7 @@ public class Game {
         if (found_user != null) {
 
             Document found_game = null;
-            
+
             if(isHexadecimal(gameName_or_gameId)){
                 found_game = database.getCollection("games").find(eq("_id", 
                 new ObjectId(gameName_or_gameId))).first();
