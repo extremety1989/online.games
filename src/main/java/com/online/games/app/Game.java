@@ -15,12 +15,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 
@@ -34,7 +37,7 @@ public class Game {
         return matcher.matches();
     }
 
-    public void run(Scanner scanner, MongoDatabase database) {
+    public void run(Scanner scanner, MongoDatabase database, Reader reader) {
 
         boolean sub_exit = false;
 
@@ -43,13 +46,10 @@ public class Game {
             System.out.println("\n");
             System.out.println("Choose an operation:");
             System.out.println("1: Create game");
-            System.out.println("2: Read games");
-            System.out.println("3: Update game");
-            System.out.println("4: Delete game");
-            System.out.println("5: List All games");
-            System.out.println("6: List All games by category");
-            System.out.println("7: List All games by price");
-            System.out.println("8: Purchase a game");
+            System.out.println("2: Update game");
+            System.out.println("3: Delete game");
+            System.out.println("4: List All games");
+            System.out.println("5: Purchase a game");
             System.out.println("0: Return to main menu");
             System.out.print("Enter option: ");
 
@@ -73,35 +73,24 @@ public class Game {
                 scanner.nextLine();
                 this.create(database, name, category, age_limit, price);
 
-            } else if (sub_option == 2) {
-
-                System.out.print("Enter the beginning of the game-name to find: ");
-
-                this.findByName(scanner, database);
-
-            } else if (sub_option == 3) {
+            } 
+            else if (sub_option == 2) {
 
                 System.out.print(
                         "Enter game-id or game-name to update (or press enter to skip): ");
 
                 this.update(scanner, database);
-            } else if (sub_option == 4) {
-                // Delete a game
+            } 
+            else if (sub_option == 3) {
+             
                 System.out.print("Enter id or name of game to delete: ");
                 String delete = scanner.nextLine();
                 this.delete(database, delete);
 
-            } else if (sub_option == 5) {
-                this.read(scanner, database);
+            } else if (sub_option == 4) {
+                reader.read(scanner, database, "games");
 
-            } else if (sub_option == 6) {
-                System.out.print("Enter category: ");
-                this.findByCategory(scanner, database);
-            } else if (sub_option == 7) {
-                System.out.print("Enter price: ");
-                this.findByPrice(scanner, database);
-            } else if (sub_option == 8) {
-           
+            } else if (sub_option == 5) {
                 this.purchaseAGame(scanner, database);
             } else if (sub_option == 0) {
                 sub_exit = true;
@@ -164,7 +153,7 @@ public class Game {
                 "Royal Bank of Canada",
                 "BNP Paribas");
 
-        System.out.println("Enter bank (0 to skip): ");
+        System.out.println("Enter bank: ");
         System.out.println("[1] Bank of America");
         System.out.println("[2] JPMorgan Chase");
         System.out.println("[3] Wells Fargo");
@@ -178,7 +167,7 @@ public class Game {
 
         String bankChoice_string = scanner.nextLine();
         Integer bankChoice = Integer.parseInt(bankChoice_string);
-        if (bankChoice > 10) {
+        if (0 < bankChoice && bankChoice > 10) {
             System.out.println("Invalid choice. Please try again.");
             return;
         }
@@ -219,7 +208,8 @@ public class Game {
 
         if (found_user != null) {
 
-            Document found_game;
+            Document found_game = null;
+            
             if(isHexadecimal(gameName_or_gameId)){
                 found_game = database.getCollection("games").find(eq("_id", 
                 new ObjectId(gameName_or_gameId))).first();
@@ -244,15 +234,19 @@ public class Game {
                                 .append("number", bankNumber));
                     }
                     
-                    new_purchase.append("created_at", new Date())
-                            .append("user_id", new ObjectId(found_user.get("_id").toString()))
-                            .append("game_id", new ObjectId(found_game.get("_id").toString()));
+                    new_purchase.append("created_at", new Date());
 
                     InsertOneResult result = database.getCollection("purchases").insertOne(new_purchase);
 
                     if (result.wasAcknowledged()) {
                         System.out.println("Transaction created successfully!");
                         found_game.put("total", (int) found_game.get("total") + 1);
+
+                        ObjectId userId = found_user.getObjectId("_id"); 
+                        ObjectId purchaseId = new_purchase.getObjectId("_id");
+                        Bson filter = Filters.eq("_id", userId);
+                        Bson push = Updates.push("purchases", purchaseId);
+                        database.getCollection("users").updateOne(filter, push);
                     } else {
                         System.out.println("Transaction not created.");
                     }
@@ -270,313 +264,6 @@ public class Game {
         }
     }
 
-    private void read(Scanner scanner, MongoDatabase database) {
-        System.out.println("\n");
-        int pageSize = 5;
-        long totalDocuments = database.getCollection("games").countDocuments();
-        int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-        System.out.printf("Total games: %d\n", totalDocuments);
-        if (totalPages == 0) {
-            System.out.println("No game found.");
-        } else {
-            int currentPage = 1; // Start with page 1
-            boolean paginating = true;
-
-            while (paginating) {
-
-                System.out.println("\n");
-                System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n", "Id", "Name", "Price", "Category",
-                        "Age Restriction", "Total sold");
-                System.out.println(
-                        "---------------------------------------------------------------------------------------------------------");
-
-                int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> pagegames = database.getCollection("games").find()
-                        .skip(skipDocuments)
-                        .limit(pageSize);
-               
-                for (Document game : pagegames) {
-                    Object id = game.get("_id");
-                    Document category = game.get("category", Document.class);
-                    System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n",
-                            id.toString(),
-                            game.get("name"),
-                            game.getDouble("price"),
-                            category.get("name"),
-                            game.getInteger("age_restriction"),
-                            game.getInteger("total"));
-                }
-
-                // Pagination controls
-                System.out.println(
-                        "---------------------------------------------------------------------------------------------------------");
-                System.out.print("\n");
-                System.out.printf("Page %d of %d\n", currentPage, totalPages);
-                System.out.print("\n");
-                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
-                System.out.print("\n");
-                System.out.print("Enter option: ");
-
-                String paginationOption = scanner.nextLine();
-
-                switch (paginationOption) {
-                    case "n":
-                        if (currentPage < totalPages) {
-                            currentPage++;
-                        } else {
-                            System.out.println("You are on the last page.");
-                        }
-                        break;
-                    case "p":
-                        if (currentPage > 1) {
-                            currentPage--;
-                        } else {
-                            System.out.println("You are on the first page.");
-                        }
-                        break;
-                    case "q":
-                        paginating = false;
-                        break;
-                    default:
-                        System.out.println("Invalid option. Please try again.");
-                        break;
-                }
-            }
-        }
-    }
-
-    private void findByName(Scanner scanner, MongoDatabase database) {
-        String name = scanner.nextLine();
-        System.out.println("\n");
-        int pageSize = 5;
-        BasicDBObject q = new BasicDBObject();
-        q.put("name",  java.util.regex.Pattern.compile(name));
-        FindIterable<Document> games = database.getCollection("games").find(q);
-
-        long totalDocuments = games.into(new ArrayList<>()).size();
-        int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-        System.out.printf("Total games: %d\n", totalDocuments);
-        if (totalPages == 0) {
-            System.out.println("No game found.");
-        } else {
-            int currentPage = 1; // Start with page 1
-            boolean paginating = true;
-
-            while (paginating) {
-
-                System.out.println("\n");
-                System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n", "Id", "Name", "Price", "Category",
-                "Age Restriction", "Total sold");
-                System.out.println(
-                        "---------------------------------------------------------------------------------------------------------");
-
-                int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> pagegames = games.skip(skipDocuments)
-                        .limit(pageSize);
-
-                        for (Document game : pagegames) {
-                            Object id = game.get("_id");
-                            Document category = game.get("category", Document.class);
-                            System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n",
-                                    id.toString(),
-                                    game.get("name"),
-                                    game.getDouble("price"),
-                                    category.get("name"),
-                                    game.getInteger("age_restriction"),
-                                    game.getInteger("total"));
-                        }
-                // Pagination controls
-                System.out.println(
-                        "---------------------------------------------------------------------------------------------------------");
-                System.out.print("\n");
-                System.out.printf("Page %d of %d\n", currentPage, totalPages);
-                System.out.print("\n");
-                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
-                System.out.print("\n");
-                System.out.print("Enter option: ");
-
-                String paginationOption = scanner.nextLine();
-
-                switch (paginationOption) {
-                    case "n":
-                        if (currentPage < totalPages) {
-                            currentPage++;
-                        } else {
-                            System.out.println("You are on the last page.");
-                        }
-                        break;
-                    case "p":
-                        if (currentPage > 1) {
-                            currentPage--;
-                        } else {
-                            System.out.println("You are on the first page.");
-                        }
-                        break;
-                    case "q":
-                        paginating = false;
-                        break;
-                    default:
-                        System.out.println("Invalid option. Please try again.");
-                        break;
-                }
-            }
-        }
-    }
-
-    private void findByCategory(Scanner scanner, MongoDatabase database) {
-        String category = scanner.nextLine();
-        System.out.println("\n");
-        int pageSize = 5;
-
-        FindIterable<Document> games = database.getCollection("games").find(
-            eq("category.name", category)
-        );
-        long totalDocuments = games.into(new ArrayList<>()).size();
-        int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-        System.out.printf("Total games: %d\n", totalDocuments);
-        if (totalPages == 0) {
-            System.out.println("No game found.");
-        } else {
-            int currentPage = 1; // Start with page 1
-            boolean paginating = true;
-
-            while (paginating) {
-
-                System.out.println("\n");
-                System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n", "Id", "Name", "Price", "Category",
-                "Age Restriction", "Total sold");
-                System.out.println(
-                        "---------------------------------------------------------------------------------------------------------");
-
-                int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> pagegames = games.skip(skipDocuments)
-                        .limit(pageSize);
-
-                        for (Document game : pagegames) {
-                            Object id = game.get("_id");
-                            System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n",
-                                    id.toString(),
-                                    game.get("name"),
-                                    game.getDouble("price"),
-                                    category,
-                                    game.getInteger("age_restriction"),
-                                    game.getInteger("total"));
-                        }
-
-                // Pagination controls
-                System.out.println(
-                        "---------------------------------------------------------------------------------------------------------");
-                System.out.print("\n");
-                System.out.printf("Page %d of %d\n", currentPage, totalPages);
-                System.out.print("\n");
-                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
-                System.out.print("\n");
-                System.out.print("Enter option: ");
-
-                String paginationOption = scanner.nextLine();
-
-                switch (paginationOption) {
-                    case "n":
-                        if (currentPage < totalPages) {
-                            currentPage++;
-                        } else {
-                            System.out.println("You are on the last page.");
-                        }
-                        break;
-                    case "p":
-                        if (currentPage > 1) {
-                            currentPage--;
-                        } else {
-                            System.out.println("You are on the first page.");
-                        }
-                        break;
-                    case "q":
-                        paginating = false;
-                        break;
-                    default:
-                        System.out.println("Invalid option. Please try again.");
-                        break;
-                }
-            }
-        }
-    }
-
-    private void findByPrice(Scanner scanner, MongoDatabase database) {
-        String price = scanner.nextLine();
-        System.out.println("\n");
-        int pageSize = 5;
-        FindIterable<Document> games = database.getCollection("games").find(
-            eq("price", Double.parseDouble(price)));
-        long totalDocuments = games.into(new ArrayList<>()).size();
-        int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-        System.out.printf("Total games: %d\n", totalDocuments);
-        if (totalPages == 0) {
-            System.out.println("No game found.");
-        } else {
-            int currentPage = 1; // Start with page 1
-            boolean paginating = true;
-
-            while (paginating) {
-
-                System.out.println("\n");
-                System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n", "Id", "Name", "Price", "Category",
-                "Age Restriction", "Total sold");
-                System.out.println(
-                        "---------------------------------------------------------------------------------------------------------");
-
-                int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> pagegames = games.skip(skipDocuments)
-                        .limit(pageSize);
-
-                        for (Document game : pagegames) {
-                            Object id = game.get("_id");
-                            Document category = game.get("category", Document.class);
-                            System.out.printf("%-29s %-30s %-5s %-20s %-2s %-9s\n",
-                                    id.toString(),
-                                    game.get("name"),
-                                    game.getDouble("price"),
-                                    category.get("name"),
-                                    game.getInteger("age_restriction"),
-                                    game.getInteger("total"));
-                        }
-
-                // Pagination controls
-                System.out.println(
-                        "---------------------------------------------------------------------------------------------------------");
-                System.out.print("\n");
-                System.out.printf("Page %d of %d\n", currentPage, totalPages);
-                System.out.print("\n");
-                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
-                System.out.print("\n");
-                System.out.print("Enter option: ");
-
-                String paginationOption = scanner.nextLine();
-
-                switch (paginationOption) {
-                    case "n":
-                        if (currentPage < totalPages) {
-                            currentPage++;
-                        } else {
-                            System.out.println("You are on the last page.");
-                        }
-                        break;
-                    case "p":
-                        if (currentPage > 1) {
-                            currentPage--;
-                        } else {
-                            System.out.println("You are on the first page.");
-                        }
-                        break;
-                    case "q":
-                        paginating = false;
-                        break;
-                    default:
-                        System.out.println("Invalid option. Please try again.");
-                        break;
-                }
-            }
-        }
-    }
 
     private void delete(MongoDatabase database, String delete) {
       

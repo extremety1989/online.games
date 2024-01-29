@@ -27,7 +27,7 @@ public class Category {
                 return matcher.matches();
             }
 
-            public void run(Scanner scanner, MongoDatabase database){
+            public void run(Scanner scanner, MongoDatabase database, Reader reader){
                        
                         boolean sub_exit = false;
 
@@ -79,7 +79,7 @@ public class Category {
                                 this.delete(database, delete);
                              
                             } else if (sub_option == 4) {
-                                this.read(scanner, database);
+                                reader.read(scanner, database, "categories");
                             } 
                             else if (sub_option == 0) {
                                 sub_exit = true;

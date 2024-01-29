@@ -36,7 +36,7 @@ public class App {
 
                 Scanner scanner = new Scanner(System.in);
                 MongoDatabase database = mongoClient.getDatabase("online_games");
-  
+                Reader reader = new Reader();
                 User user = new User();
                 Game game = new Game();
                 Category category = new Category();
@@ -62,21 +62,21 @@ public class App {
                     scanner.nextLine(); 
                     if (option == 1) {
                        
-                        category.run(scanner, database);
+                        category.run(scanner, database, reader);
                     } else if (option == 2) {
                   
-                        game.run(scanner, database);
+                        game.run(scanner, database, reader);
                     } else if (option == 3) {
                     
-                        user.run(scanner, database);
+                        user.run(scanner, database, reader);
                     }
 
                     else if (option == 4) {
-                      comment.run(scanner, database);
+                      comment.run(scanner, database, reader);
                     } else if (option == 5) {
-                       rating.run(scanner, database);
+                       rating.run(scanner, database, reader);
                     } else if (option == 6) {
-                       purchase.run(scanner, database);
+                       purchase.run(scanner, database, reader);
                     } else if (option == 7) {
                         bulkData.createMock(database);
                     }

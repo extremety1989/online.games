@@ -2,25 +2,38 @@ package com.online.games.app;
 
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.or;
+import static com.mongodb.client.model.Aggregates.limit;
+import static com.mongodb.client.model.Aggregates.lookup;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.bson.json.JsonWriter;
+import org.bson.json.JsonWriterSettings;
 import org.bson.types.ObjectId;
 
+import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.FindIterable;
 
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.result.DeleteResult;
 
 import com.mongodb.client.result.UpdateResult;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import static java.util.Collections.singletonList;
 
 public class User {
 
@@ -31,7 +44,7 @@ public class User {
         return matcher.matches();
     }
 
-    public void run(Scanner scanner, MongoDatabase database){
+    public void run(Scanner scanner, MongoDatabase database, Reader reader){
                         // Users management
                         boolean sub_exit = false;
 
@@ -40,10 +53,12 @@ public class User {
                             System.out.println("\n");
                             System.out.println("Choose an operation:");
                             System.out.println("1: Create user");
-                            System.out.println("2: Read user");
-                            System.out.println("3: Update user");
-                            System.out.println("4: Delete user");
-                            System.out.println("5: List All users");
+                            System.out.println("2: Update user");
+                            System.out.println("3: Delete user");
+                            System.out.println("4: List All users");
+                            System.out.println("5: List All comments by user");
+                            System.out.println("6: List All ratings by user");
+                            System.out.println("7: List All purchases by user");
                             System.out.println("0: Return to main menu");
                             System.out.print("Enter option: ");
 
@@ -71,30 +86,40 @@ public class User {
                             
                             } else if (sub_option == 2) {
 
-                        
-                                System.out.print("Enter user_id, username or email to find: ");
-                                String id_or_username_or_email = scanner.nextLine();
-                                this.find(database, id_or_username_or_email);
-
-                            } else if (sub_option == 3) {
-
                            
                                 System.out.print(
                                         "Enter user-id or username or email of user (or press enter to skip): ");
                                 
 
                                 this.update(scanner, database);
-                            } else if (sub_option == 4) {
+                            } else if (sub_option == 3) {
                              
                                 System.out.print("Enter id, username or email of user to delete: ");
                                 String delete = scanner.nextLine();
                                 this.delete(database, delete);
                              
-                            } else if (sub_option == 5) {
-
-                                this.read(scanner, database);
+                            } else if (sub_option == 4) {
+                              
+                                reader.read(scanner, database, "users");
                             } 
-
+                            else if (sub_option == 5){
+                                
+                                System.out.print("Enter user_id, username or email to find: ");
+                            
+                                this.readAll(scanner, database, "comments");
+                            }
+                            else if (sub_option == 6){
+                                
+                                System.out.print("Enter user_id, username or email to find: ");
+                            
+                                this.readAll(scanner, database, "ratings");
+                            }
+                            else if (sub_option == 7){
+                                
+                                System.out.print("Enter user_id, username or email to find: ");
+                            
+                                this.readAll(scanner, database, "purchases");
+                            }
 
                             else if (sub_option == 0) {
                                 sub_exit = true;
@@ -137,18 +162,34 @@ public class User {
     }
 
 
-
-
-    private void read(Scanner scanner, MongoDatabase database) {
-
+    private void readAll(Scanner scanner, MongoDatabase database, String what) {
+        System.out.print("Enter user_id, username or email to find: ");
+        String value = scanner.nextLine();
         System.out.println("\n");
         int pageSize = 5;
-       
-        long totalDocuments = database.getCollection("users").countDocuments();
+  
+        Bson matchStage;
+        if(isHexadecimal(value)){
+            matchStage = Aggregates.match(eq("_id", new ObjectId(value)));
+        } else{
+            matchStage = Aggregates.match(
+                or(
+                                        eq("username", value),
+                                        eq("email", value))
+                                    
+            );
+        }
+
+        Bson lookupStage = Aggregates.lookup(what, what, "_id", what);      
+        List<Bson> aggregationPipeline = Arrays.asList(matchStage, lookupStage);
+        long totalDocuments = database.getCollection("users").aggregate(aggregationPipeline)
+                .into(new ArrayList<>()).size();
+   
         int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-        System.out.printf("Total users: %d\n", totalDocuments);
+        System.out.printf("Total "+what+": %d\n", totalDocuments);
+
         if (totalPages == 0) {
-            System.out.println("No users found.");
+            System.out.println("No "+what+" found.");
         }else{
             int currentPage = 1; // Start with page 1
             boolean paginating = true;
@@ -156,25 +197,24 @@ public class User {
             while (paginating) {
                
                 System.out.println("\n");
-                System.out.printf("%-29s %-20s %-20s %-5s %-20s %-20s\n", "Id", "Lastname", "Firstname", "Age", "Email", "Username");
                 System.out.println(
                         "------------------------------------------------------------------------------------------------------------------------------------------");
-
+            
                 int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> pageusers = database.getCollection("users").find()
-                .skip(skipDocuments)
-                .limit(pageSize);
-                for (Document user : pageusers) {
-                    Object id = user.get("_id");
-                    System.out.printf("%-29s %-20s %-20s %-5d %-20s %-20s\n",
-                            id.toString(),
-                            user.getString("lastname"),
-                            user.getString("firstname"),
-                            user.getInteger("age"),
-                            user.getString("email"),
-                            user.getString("username")
-                    );
-                }
+
+               
+                Bson limitStage = Aggregates.limit(pageSize); // set your desired limit here
+                Bson skipStage = Aggregates.skip(skipDocuments); // set your desired skip value here
+
+               
+                lookupStage = Aggregates.lookup(what, what, "_id", what);
+                
+                aggregationPipeline = Arrays.asList(matchStage, lookupStage, skipStage, limitStage);
+                
+                database.getCollection("users").aggregate(aggregationPipeline)
+                        .into(new ArrayList<>())
+                        .forEach(document -> System.out.println(document.toJson(JsonWriterSettings.builder().indent(true).build())));
+
 
                 // Pagination controls
                 System.out.println(
@@ -214,39 +254,8 @@ public class User {
         }
     }
 
-    private void find(MongoDatabase database, String value){
 
-        Document found;
-        if(isHexadecimal(value)){
-            found = database.getCollection("users").find(eq("_id", new ObjectId(value))).first();
-        } else{
-            found = database.getCollection("users").find(or(
-                                        eq("username", value),
-                                        eq("email", value))
-                                    ).first();
-        }
 
-        if (found != null) {
-            long totalComments = database.getCollection("comments").countDocuments(eq("user_id", found.get("_id")));
-            long totalRatings = database.getCollection("ratings").countDocuments(eq("user_id", found.get("_id")));
-            long totalPurchases = database.getCollection("purchases").countDocuments(eq("user_id", found.get("_id")));
-            System.out.println(
-                "Id: " + found.get("_id").toString()
-            + " Lastname: " + found.getString("lastname") 
-            + " Firstname: "  +  found.getString("firstname") 
-            + " Age: " + found.getInteger("age")
-            + " Email: " + found.getString("email") 
-            + " Username: " + found.getString("username")
-            + " Password: " + found.getString("password")
-            + " Created at: " + found.getDate("created_at")
-            + " Total comments: " + totalComments
-            + " Total ratins: " + totalRatings
-            + " Total purchases: " + totalPurchases
-            );
-        } else {
-            System.out.println("user not found.");
-        }
-    }
 
     private void delete(MongoDatabase database, String delete) {
          DeleteResult deleteResult;

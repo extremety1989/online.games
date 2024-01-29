@@ -9,24 +9,21 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
 import com.mongodb.client.FindIterable;
 
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 
 public class Purchase {
 
-    private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
 
-    private static boolean isHexadecimal(String input) {
-        final Matcher matcher = HEXADECIMAL_PATTERN.matcher(input);
-        return matcher.matches();
-    }
-
-    public void run(Scanner scanner, MongoDatabase database) {
+    public void run(Scanner scanner, MongoDatabase database, Reader reader) {
         // Users management
         boolean sub_exit = false;
 
@@ -36,9 +33,7 @@ public class Purchase {
             System.out.println("Choose an operation:");
             System.out.println("1: Create purchase");
             System.out.println("2: Delete purchase");
-            System.out.println("3: Delete All purchases by user");
-            System.out.println("4: List All purchases");
-            System.out.println("5: List All purchases by user or game");
+            System.out.println("3: List All purchases");
 
             System.out.println("0: Return to main menu");
             System.out.print("Enter option: ");
@@ -68,17 +63,11 @@ public class Purchase {
                 String delete = scanner.nextLine();
                 this.delete(database, delete);
 
-            } else if (sub_option == 3) {
-                System.out.print("Enter id, username or email of user to delete all purchases: ");
-                String delete = scanner.nextLine();
-                this.deleteByUserIdOrUsernameOrEmail(database, delete);
+            } 
+            else if (sub_option == 3) {
+                reader.read(scanner, database, "purchases");
             }
-
-            else if (sub_option == 4) {
-                this.read(scanner, database);
-            }else if (sub_option == 5) {
-                this.readByUserOrGame(scanner, database);
-            } else if (sub_option == 0) {
+            else if (sub_option == 0) {
                 sub_exit = true;
                 break;
             } else {
@@ -117,15 +106,21 @@ public class Purchase {
                         new_purchase.append("bank", new Document().append("name", bankName).append("number",
                          bankNumber));
                     }
-
-                    new_purchase.append("created_at", new Date())
-                            .append("user_id", found_user.get("_id"))
-                            .append("game_id", found_game.get("_id"));
+                    ObjectId gameId = found_game.getObjectId("_id");
+                    new_purchase.append("game_id", gameId);
+                    new_purchase.append("created_at", new Date());
 
                     InsertOneResult result = database.getCollection("purchases").insertOne(new_purchase);
 
                     if (result.wasAcknowledged()) {
-                        System.out.println("Transaction created successfully!");
+
+                    ObjectId userId = found_user.getObjectId("_id"); 
+                    ObjectId purchaseId = new_purchase.getObjectId("_id");
+
+                    Bson filter = Filters.eq("_id", userId);
+                    Bson push = Updates.push("purchases", purchaseId);
+                    database.getCollection("users").updateOne(filter, push);
+
                     } else {
                         System.out.println("Transaction not created.");
                     }
@@ -143,228 +138,6 @@ public class Purchase {
         }
     }
 
-    private void read(Scanner scanner, MongoDatabase database) {
-        System.out.println("\n");
-        int pageSize = 5;
-        long totalDocuments = database.getCollection("purchases").countDocuments();
-        int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-        System.out.printf("Total purchases: %d\n", totalDocuments);
-        if (totalPages == 0) {
-            System.out.println("No purchases found.");
-        } else {
-            int currentPage = 1; // Start with page 1
-            boolean paginating = true;
-
-            while (paginating) {
-
-                System.out.println("\n");
-                System.out.printf("%-30s %-30s %-5s %-3s %-6s\n" + //
-                        "", "User Id", "Bank Name", "Bank Number", "Currency", "created_at");
-                System.out.println(
-                        "----------------------------------------------------------------------------------------------------------------------------------------------------");
-
-                int skipDocuments = (currentPage - 1) * pageSize;
-                FindIterable<Document> page = database.getCollection("purchases").find()
-                .skip(skipDocuments)
-                .limit(pageSize);
-        for (Document p : page) {
-            Document temp = p.get("bank", Document.class);
-            System.out.print(p.get("user_id") + " ");
-            System.out.print(temp.get("name") + " ");
-            System.out.print(temp.get("number") + " ");
-            System.out.print(p.get("currency") + " ");
-            System.out.print(p.get("created_at")    + " ");
-            System.out.println();
-            }
-
-                // Pagination controls
-                System.out.println(
-                        "----------------------------------------------------------------------------------------------------------------------------------------------------");
-                System.out.print("\n");
-                System.out.printf("Page %d of %d\n", currentPage, totalPages);
-                System.out.print("\n");
-                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
-                System.out.print("\n");
-                System.out.print("Enter option: ");
-
-                String paginationOption = scanner.nextLine();
-
-                switch (paginationOption) {
-                    case "n":
-                        if (currentPage < totalPages) {
-                            currentPage++;
-                        } else {
-                            System.out.println("You are on the last page.");
-                        }
-                        break;
-                    case "p":
-                        if (currentPage > 1) {
-                            currentPage--;
-                        } else {
-                            System.out.println("You are on the first page.");
-                        }
-                        break;
-                    case "q":
-                        paginating = false;
-                        break;
-                    default:
-                        System.out.println("Invalid option. Please try again.");
-                        break;
-                }
-            }
-        }
-    }
-
-    private void readByUserOrGame(Scanner scanner, MongoDatabase database) {
-        System.out.println("\n");
-        System.out.print("Enter user-id or username or email or game-name of purchases to search: ");
-        String id_or_username_or_email_or_gamename = scanner.nextLine();
-        Document found = null;
-        if(isHexadecimal(id_or_username_or_email_or_gamename)){
-            found = database.getCollection("users").find(eq("_id", new ObjectId(id_or_username_or_email_or_gamename))).first();
-        } else{
-            found = database.getCollection("users").find(or(
-                                        eq("username", id_or_username_or_email_or_gamename),
-                                        eq("email", id_or_username_or_email_or_gamename))
-                           ).first();
-        }
-        long totalDocuments;
-        if(found == null){
-            found = database.getCollection("games").find(eq("name", id_or_username_or_email_or_gamename)).first();
-            totalDocuments = database
-            .getCollection("purchases")
-            .countDocuments(
-    
-
-                        eq("game_id", found.get("_id"))
-                        
-            );
-        }else{
-            totalDocuments = database
-            .getCollection("purchases")
-            .countDocuments(
-
-                        eq("user_id", found.get("_id"))
-         
-                        
-            );
-        }
-        int pageSize = 5;
-
-
-      
-        int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
-        System.out.printf("Total purchases: %d\n", totalDocuments);
-        if (totalPages == 0) {
-            System.out.println("No purchases found.");
-        } else {
-            int currentPage = 1; // Start with page 1
-            boolean paginating = true;
-
-            while (paginating) {
-
-                System.out.println("\n");
-                System.out.printf("%-29s %-40s %-5s %-3s %-6s\n", "Id", "Bank Name", "Bank Number", "Amount",
-                        "Currency", "Date");
-                System.out.println(
-                        "----------------------------------------------------------------------------------------------------------------------------------------------------");
-
-                int skipDocuments = (currentPage - 1) * pageSize;
-
-                Document foundUser; 
-                FindIterable<Document> page;
-                if (isHexadecimal(id_or_username_or_email_or_gamename)){
-                    foundUser = database.getCollection("users").find(
-                    
-                                eq("_id", new ObjectId(id_or_username_or_email_or_gamename))
-                               )
-                        .first();
-                } else{
-                    foundUser = database.getCollection("users").find(
-                        or(
-                                eq("username", id_or_username_or_email_or_gamename),
-                                eq("email", id_or_username_or_email_or_gamename)))
-                        .first();
-                }
-              
-
-                Document foundGame = null;
-                if (foundUser == null) {
-                    foundGame = database.getCollection("games").find(
-                            eq("name", id_or_username_or_email_or_gamename)).first();
-                    if (foundGame == null) {
-                        System.out.println("User or game not found.");
-                        return;
-                    }
-                    FindIterable<Document> dd = database.getCollection("purchases")
-                    .find(
-                        
-             
-                                    eq("game_id", foundGame.get("_id")));
-           
-                    page = dd.skip(skipDocuments).limit(pageSize);
-                    
-                }else{
-                    FindIterable<Document> dd = database.getCollection("purchases")
-                    .find(
-                  
-                                    eq("user_id", foundUser.get("_id")));
-                        
-                    page = dd.skip(skipDocuments).limit(pageSize);
-                }
-
-         
-
-                for (Document p : page) {
-                    Object id = p.get("_id");
-                    Document temp = p.get("bank", Document.class);
-                    System.out.printf("%-29s %-20s %-5s %-3s %-6s\n",
-                            id.toString(),
-                            temp.get("name"),
-                            temp.get("number"),
-                            p.getDouble("amount"),
-                            p.get("currency"),
-                            p.getDate("created_at"));
-                }
-                
-                // Pagination controls
-                System.out.println(
-                        "----------------------------------------------------------------------------------------------------------------------------------------------------");
-                System.out.print("\n");
-                System.out.printf("Page %d of %d\n", currentPage, totalPages);
-                System.out.print("\n");
-                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
-                System.out.print("\n");
-                System.out.print("Enter option: ");
-
-                String paginationOption = scanner.nextLine();
-
-                switch (paginationOption) {
-                    case "n":
-                        if (currentPage < totalPages) {
-                            currentPage++;
-                        } else {
-                            System.out.println("You are on the last page.");
-                        }
-                        break;
-                    case "p":
-                        if (currentPage > 1) {
-                            currentPage--;
-                        } else {
-                            System.out.println("You are on the first page.");
-                        }
-                        break;
-                    case "q":
-                        paginating = false;
-                        break;
-                    default:
-                        System.out.println("Invalid option. Please try again.");
-                        break;
-                }
-            }
-        }
-    }
-
 
     private void delete(MongoDatabase database, String delete) {
         DeleteResult deleteResult = database.getCollection("purchases").deleteOne(eq("_id", delete));
@@ -375,21 +148,4 @@ public class Purchase {
         }
     }
 
-    private void deleteByUserIdOrUsernameOrEmail(MongoDatabase database, String delete) {
-        DeleteResult deleteResult;
-        if (isHexadecimal(delete)){
-            deleteResult = database.getCollection("purchases").deleteMany(eq("user_id", delete));
-        }else{
-            deleteResult = database.getCollection("purchases").deleteMany(
-                    or(
-                            eq("username", delete),
-                            eq("email", delete)));
-        }
-
-        if (deleteResult.getDeletedCount() > 0) {
-            System.out.println("purchases deleted successfully!");
-        } else {
-            System.out.println("No purchases deleted.");
-        }
-    }
 }

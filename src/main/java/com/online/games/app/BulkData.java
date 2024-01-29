@@ -9,11 +9,14 @@ import java.util.List;
 import javax.print.Doc;
 
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
 import com.github.javafaker.Faker;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Updates;
 
 public class BulkData {
     private final List<String> gameNames = Arrays.asList(
@@ -230,6 +233,9 @@ public class BulkData {
             Date date = new Date();
             Document user = new Document().append("firstname",
              firstName).append("lastname", lastName).append("email", email).append("age", age)
+                    .append("comments", new ArrayList<ObjectId>())
+                    .append("ratings", new ArrayList<ObjectId>())
+                    .append("purchases", new ArrayList<ObjectId>())
                     .append("username", userName).append("password", password).append("created_at", date);
             users.add(user);
         }
@@ -247,80 +253,96 @@ public class BulkData {
     public void createMockPurchase(MongoDatabase database, List<Document> users, List<Document> games) {
         List <Document> purchases = new ArrayList<Document>();
 
-        for (Document user : users) {
-            for (Document game: games){
-                for (int i = 0; i < 5; i++) {
-                    Faker faker = new Faker();
-                    String bankName = bankNames.get(faker.random().nextInt(bankNames.size()));
-                    Integer bankNumber = faker.number().numberBetween(100000000, 999999999);
-                    Double amout = prices.get(faker.random().nextInt(prices.size()));
-                    String currency = "EUR";
-                    Document purchase = new Document();
-                
-                    Object user_id = user.get("_id");
-                    Object game_id = game.get("_id");
-                    purchase.append("created_at", new Date());
-                    purchase.append("user_id", user_id);
-                    purchase.append("game_id", game_id);
+        for (int i = 0; i < 50; i++) {
+            Faker faker = new Faker();
+            String bankName = bankNames.get(faker.random().nextInt(bankNames.size()));
+            Integer bankNumber = faker.number().numberBetween(100000000, 999999999);
+            Double amout = prices.get(faker.random().nextInt(prices.size()));
+            String currency = "EUR";
+            Document purchase = new Document();
 
-                    purchase.append("bank", new Document().append("name", bankName).append("number", bankNumber));
-    
-                    purchase.append("amount", amout)
-                    .append("currency", currency);
-    
-                    purchases.add(purchase);
-                }   
-            }
-        }
-
+            purchase.append("created_at", new Date());
+            purchase.append("bank", new Document().append("name", bankName).append("number", bankNumber));
+            purchase.append("amount", amout)
+            .append("currency", currency);
+            purchases.add(purchase);
+        }   
         database.getCollection("purchases").insertMany(purchases);
+        pushPurchaseIntoUSer(database, users, purchases);
     }
+
+    public void pushPurchaseIntoUSer(MongoDatabase database, List<Document> users, List<Document> purchases) {
+        for (Document user : users) {
+            Faker faker = new Faker();
+            ObjectId userId = user.getObjectId("_id"); 
+            ObjectId purchaseId = purchases.get(faker.random().nextInt(purchases.size())).getObjectId("_id");
+            Bson filter = Filters.eq("_id", userId);
+            Bson push = Updates.push("purchases", purchaseId);
+            database.getCollection("users").updateOne(filter, push);
+        }
+    }   
 
     public void createMockComment(MongoDatabase database, List<Document> users, List<Document> games) {
         List <Document> comments = new ArrayList<Document>();
 
-        for (Document user : users) {
-            for (Document game : games) {
-                for (int i = 0; i < 5; i++) {
-                    Faker faker = new Faker();
-                    String comment = faker.lorem().sentence();
-                    Document commentDoc = new Document();
-                    commentDoc.append("created_at", new Date());
-                    ObjectId user_id = user.getObjectId("_id");
-                    ObjectId game_id = game.getObjectId("_id");
-                    commentDoc.append("user_id", user_id);
-                    commentDoc.append("game_id", game_id);
-                    commentDoc.append("comment", comment);
-
-                    comments.add(commentDoc);
-                }  
-            }    
-        }
+        for (int i = 0; i < 50; i++) {
+            Faker faker = new Faker();
+            String comment = faker.lorem().sentence();
+            Document commentDoc = new Document();
+            commentDoc.append("created_at", new Date());
+            commentDoc.append("comment", comment);
+            comments.add(commentDoc);
+        }  
 
         database.getCollection("comments").insertMany(comments);
+        pushCommentIntoUSerAndGame(database, users, comments, games);
     }
+    public void pushCommentIntoUSerAndGame(MongoDatabase database, List<Document> users, List<Document> comments, List<Document> games) {
+        for (Document user : users) {
+            Faker faker = new Faker();
+            ObjectId userId = user.getObjectId("_id"); 
+            ObjectId commentId = comments.get(faker.random().nextInt(comments.size())).getObjectId("_id");
+            Bson filter = Filters.eq("_id", userId);
+            Bson push = Updates.push("comments", commentId);
+            database.getCollection("users").updateOne(filter, push);
+        }
+
+        for (Document game : games) {
+            Faker faker = new Faker();
+            ObjectId gameId = game.getObjectId("_id"); 
+            ObjectId commentId = comments.get(faker.random().nextInt(comments.size())).getObjectId("_id");
+            Bson filter = Filters.eq("_id", gameId);
+            Bson push = Updates.push("comments", commentId);
+            database.getCollection("games").updateOne(filter, push);
+        }
+    }   
 
     public void createMockRating(MongoDatabase database, List<Document> users, List<Document> games) {
         List <Document> ratings = new ArrayList<Document>();
 
-        for (Document user : users) {
-            for (Document game : games){
-                for (int i = 0; i < 5; i++) {
-                    Faker faker = new Faker();
-                    Integer rating = faker.number().numberBetween(1, 5);
-                    Document ratingDoc = new Document();
-                    ratingDoc.append("created_at", new Date());
-                    ratingDoc.append("user_id", user.get("_id"));
-                    ratingDoc.append("game_id", game.get("_id"));
-                    ratingDoc.append("rating", rating);
-    
-                    ratings.add(ratingDoc);
-                }   
-            }
-        }
+        for (int i = 0; i < 50; i++) {
+            Faker faker = new Faker();
+            Integer rating = faker.number().numberBetween(1, 5);
+            Document ratingDoc = new Document();
+            ratingDoc.append("created_at", new Date());
+            ratingDoc.append("rating", rating);
+            ratings.add(ratingDoc);
+        } 
 
         database.getCollection("ratings").insertMany(ratings);
+        pushRatingIntoUSer(database, users, ratings);
     }
+
+    public void pushRatingIntoUSer(MongoDatabase database, List<Document> users, List<Document> ratings) {
+        for (Document user : users) {
+            Faker faker = new Faker();
+            ObjectId userId = user.getObjectId("_id"); 
+            ObjectId ratingId = ratings.get(faker.random().nextInt(ratings.size())).getObjectId("_id");
+            Bson filter = Filters.eq("_id", userId);
+            Bson push = Updates.push("ratings", ratingId);
+            database.getCollection("users").updateOne(filter, push);
+        }
+    }   
 
 
 }
