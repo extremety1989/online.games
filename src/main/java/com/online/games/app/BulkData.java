@@ -260,7 +260,7 @@ public class BulkData {
             Double amout = prices.get(faker.random().nextInt(prices.size()));
             String currency = "EUR";
             Document purchase = new Document();
-
+            purchase.append("game_id", users.get(faker.random().nextInt(users.size())).getObjectId("_id"));
             purchase.append("created_at", new Date());
             purchase.append("bank", new Document().append("name", bankName).append("number", bankNumber));
             purchase.append("amount", amout)
@@ -291,6 +291,7 @@ public class BulkData {
             Document commentDoc = new Document();
             commentDoc.append("created_at", new Date());
             commentDoc.append("comment", comment);
+            commentDoc.append("game_id", users.get(faker.random().nextInt(users.size())).getObjectId("_id"));
             comments.add(commentDoc);
         }  
 
@@ -313,6 +314,7 @@ public class BulkData {
             ObjectId commentId = comments.get(faker.random().nextInt(comments.size())).getObjectId("_id");
             Bson filter = Filters.eq("_id", gameId);
             Bson push = Updates.push("comments", commentId);
+            
             database.getCollection("games").updateOne(filter, push);
         }
     }   
@@ -326,6 +328,7 @@ public class BulkData {
             Document ratingDoc = new Document();
             ratingDoc.append("created_at", new Date());
             ratingDoc.append("rating", rating);
+            ratingDoc.append("game_id", users.get(faker.random().nextInt(users.size())).getObjectId("_id"));
             ratings.add(ratingDoc);
         } 
 
