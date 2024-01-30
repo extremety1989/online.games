@@ -187,12 +187,14 @@ public class Comment {
 
 
     private void delete(MongoDatabase database, String delete) {
+        ObjectId commentId = new ObjectId(delete);
         DeleteResult deleteResult = database.getCollection("comments").deleteOne( 
-            eq("_id", new ObjectId(delete)));
+            eq("_id", commentId));
         if (deleteResult.getDeletedCount() > 0) {
             System.out.println("comment deleted successfully!");
-            database.getCollection("games").deleteOne(eq("comments", new ObjectId(delete)));
-            database.getCollection("users").deleteOne(eq("comments", new ObjectId(delete)));
+            Bson update = Updates.pull("comments", commentId);
+            database.getCollection("games").updateMany(eq("comments", commentId), update);
+            database.getCollection("users").updateMany(eq("comments", commentId), update);
         } else {
             System.out.println("No comment deleted.");
         }

@@ -73,11 +73,13 @@ public class Purchase {
 
 
     private void deleteOrView(MongoDatabase database, String delete, boolean ok) {
+        ObjectId purchaseId = new ObjectId(delete);
+     
         if(!ok){
             Document found = database.getCollection("purchases").find(
              
        
-                        eq("_id", new ObjectId(delete)))
+                        eq("_id", purchaseId))
                 
                 .first();
                 if (found != null){
@@ -87,12 +89,11 @@ public class Purchase {
                 return;
         }
         DeleteResult deleteResult = database.getCollection("purchases").deleteOne(
-            eq("_id", new ObjectId(delete)));
+            eq("_id", purchaseId));
         if (deleteResult.getDeletedCount() > 0) {
             System.out.println("purchase deleted successfully!");
-          
-            database.getCollection("users").deleteOne(eq("purchases", new ObjectId(delete)));
-     
+            Bson update = Updates.pull("comments", purchaseId);
+            database.getCollection("users").updateMany(eq("purchases", purchaseId), update);
         } else {
             System.out.println("No purchase deleted.");
         }
