@@ -132,43 +132,43 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
             )
             ).first();
 
-        if (found_user != null) {
-
-            Document found_game = database.getCollection("games").find(
-                eq("name", gameName)
-                ).first();
-                if (found_game != null) {
-                    Document new_rating = new Document();
-                    ObjectId gameId = found_game.getObjectId("_id");
-                    new_rating.append("game_id", gameId);
-                    new_rating.append("rating", rating)
-                    .append("date",  new Date());
-                    InsertOneResult result = database.getCollection("ratings").insertOne(new_rating);
-
-                    if (result.wasAcknowledged()) {
-                        
-                    ObjectId userId = found_user.getObjectId("_id"); 
-                  
-                    ObjectId ratingId = new_rating.getObjectId("_id");
-                    Bson filter = Filters.eq("_id", userId);
-                    Bson push = Updates.push("ratings", ratingId);
-                    database.getCollection("users").updateOne(filter, push);
-
-                    filter = Filters.eq("_id", gameId);
-                    push = Updates.push("ratings", ratingId);
-                    database.getCollection("games").updateOne(filter, push);
-
-                        System.out.println("Rating created successfully!");
-                    } else {
-                        System.out.println("Rating not created.");
-                    }
-                } else {
-                    System.out.println("Game not found.");
-                }
-
-        } else {
-            System.out.println("user not found.");
+        if (found_user == null) {
+            System.out.println("User not found.");
+            return;
         }
+
+        Document found_game = database.getCollection("games").find(
+            eq("name", gameName)
+            ).first();
+
+            if (found_game == null) {
+                System.out.println("Game not found.");
+                return;
+            }
+            Document new_rating = new Document();
+            ObjectId gameId = found_game.getObjectId("_id");
+            new_rating.append("game_id", gameId);
+            new_rating.append("rating", rating)
+            .append("date",  new Date());
+            InsertOneResult result = database.getCollection("ratings").insertOne(new_rating);
+
+            if (result.wasAcknowledged()) {
+                
+                ObjectId userId = found_user.getObjectId("_id"); 
+            
+                ObjectId ratingId = new_rating.getObjectId("_id");
+                Bson filter = Filters.eq("_id", userId);
+                Bson push = Updates.push("ratings", ratingId);
+                database.getCollection("users").updateOne(filter, push);
+
+                filter = Filters.eq("_id", gameId);
+                push = Updates.push("ratings", ratingId);
+                database.getCollection("games").updateOne(filter, push);
+
+                System.out.println("Rating created successfully!");
+            } else {
+                System.out.println("Rating not created.");
+            }
     }
 
 
@@ -176,6 +176,8 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
         DeleteResult deleteResult = database.getCollection("ratings").deleteOne( eq("_id", new ObjectId(delete)));
         if (deleteResult.getDeletedCount() > 0) {
             System.out.println("rating deleted successfully!");
+            database.getCollection("games").deleteOne(eq("comments", new ObjectId(delete)));
+            database.getCollection("users").deleteOne(eq("comments", new ObjectId(delete)));
         } else {
             System.out.println("No rating deleted.");
         }

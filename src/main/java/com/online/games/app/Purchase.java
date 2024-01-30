@@ -164,9 +164,13 @@ public class Purchase {
                 }
                 return;
         }
-        DeleteResult deleteResult = database.getCollection("purchases").deleteOne(eq("_id", delete));
+        DeleteResult deleteResult = database.getCollection("purchases").deleteOne(
+            eq("_id", new ObjectId(delete));
         if (deleteResult.getDeletedCount() > 0) {
             System.out.println("purchase deleted successfully!");
+          
+            database.getCollection("users").deleteOne(eq("purchases", new ObjectId(delete)));
+     
         } else {
             System.out.println("No purchase deleted.");
         }
