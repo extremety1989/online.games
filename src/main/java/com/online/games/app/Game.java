@@ -183,7 +183,7 @@ public class Game {
         }
 
         String bankName = bankNames.get(bankChoice - 1);
-        System.out.println("Enter bank number (enter to skip): ");
+        System.out.println("Enter bank number: ");
 
         String bankNumber_string = scanner.nextLine();
         Long bankNumber = null;
