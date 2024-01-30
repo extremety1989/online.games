@@ -37,9 +37,10 @@ public class Category {
                             System.out.println("\n");
                             System.out.println("Choose an operation:");
                             System.out.println("1: Create category");
-                            System.out.println("2: Update category");
-                            System.out.println("3: Delete category");
-                            System.out.println("4: List All categories");
+                            System.out.println("2: View category");
+                            System.out.println("3: Update category");
+                            System.out.println("4: Delete category");
+                            System.out.println("5: List All categories");
                             System.out.println("0: Return to main menu");
                             System.out.print("Enter option: ");
 
@@ -62,9 +63,9 @@ public class Category {
                                         "Enter id of category to view: ");
 
             
-                                this.updateOrView(scanner, database, true);
+                                this.updateOrView(scanner, database, false);
                             } 
-                            else if (sub_option == 2) {
+                            else if (sub_option == 3) {
 
                          
                                 System.out.print(
@@ -72,13 +73,13 @@ public class Category {
      
                                 this.updateOrView(scanner, database, true);
                             } 
-                            else if (sub_option == 3) {
+                            else if (sub_option == 4) {
                               
                                 System.out.print("Enter id of category to delete: ");
                                 String delete = scanner.nextLine();
                                 this.delete(database, delete);
                              
-                            } else if (sub_option == 4) {
+                            } else if (sub_option == 5) {
                                 reader.read(scanner, database, "categories");
                             } 
                             else if (sub_option == 0) {

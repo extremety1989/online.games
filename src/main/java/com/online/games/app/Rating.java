@@ -158,6 +158,10 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
                     Bson push = Updates.push("ratings", ratingId);
                     database.getCollection("users").updateOne(filter, push);
 
+                    filter = Filters.eq("_id", gameId);
+                    push = Updates.push("ratings", ratingId);
+                    database.getCollection("games").updateOne(filter, push);
+
                         System.out.println("Rating created successfully!");
                     } else {
                         System.out.println("Rating not created.");

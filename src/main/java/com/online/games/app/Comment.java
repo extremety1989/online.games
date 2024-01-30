@@ -159,12 +159,17 @@ public class Comment {
                     .append("created_at",  new Date());
                     InsertOneResult result = database.getCollection("comments").insertOne(new_comment);
                     if (result.wasAcknowledged()) {
-
+                      
              
                     ObjectId commentId = new_comment.getObjectId("_id");
                     Bson filter = Filters.eq("_id", userId);
                     Bson push = Updates.push("comments", commentId);
                     database.getCollection("users").updateOne(filter, push);
+
+
+                    filter = Filters.eq("_id", gameId);
+                    push = Updates.push("comments", commentId);
+                    database.getCollection("games").updateOne(filter, push);
 
                         System.out.println("Comment created successfully!");
                     } else {
