@@ -20,12 +20,11 @@ import org.bson.json.JsonWriter;
 import org.bson.json.JsonWriterSettings;
 import org.bson.types.ObjectId;
 
-import com.mongodb.client.AggregateIterable;
-import com.mongodb.client.FindIterable;
+
 
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Filters;
+
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.result.DeleteResult;
 
@@ -33,7 +32,6 @@ import com.mongodb.client.result.UpdateResult;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import static java.util.Collections.singletonList;
 
 public class User {
 

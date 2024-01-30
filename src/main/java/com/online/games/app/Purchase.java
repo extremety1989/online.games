@@ -65,28 +65,17 @@ public class Purchase {
 
                 System.out.print("Enter id of purchase to view: ");
                 String delete = scanner.nextLine();
-                this.delete(database, delete, false);
+                this.deleteOrView(database, delete, false);
 
             } 
 
             else if (sub_option == 3){
                 System.out.print("Enter id of purchase to delete: ");
                 String delete = scanner.nextLine();
-                this.delete(database, delete, true);
+                this.deleteOrView(database, delete, true);
             }
 
             else if (sub_option == 4) {
-                this.listAll(database, scanner, reader);
-            }
-
-            else if (sub_option == 0) {
-                sub_exit = true;
-                break;
-            } else {
-                System.out.println("Invalid option. Please try again.");
-                break;
-            }
-            else if (sub_option == 3) {
                 reader.read(scanner, database, "purchases");
             }
             else if (sub_option == 0) {
@@ -161,7 +150,7 @@ public class Purchase {
     }
 
 
-    private void delete(MongoDatabase database, String delete, boolean ok) {
+    private void deleteOrView(MongoDatabase database, String delete, boolean ok) {
         if(!ok){
             Document found = database.getCollection("users").find(
              
