@@ -2,11 +2,7 @@ package com.online.games.app;
 
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.or;
-import static com.mongodb.client.model.Filters.text;
 
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -15,15 +11,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.bson.json.JsonWriterSettings;
 import org.bson.types.ObjectId;
 
 
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
-import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 
@@ -125,12 +118,12 @@ public class Game {
                     .append("age_restriction", age_restriction);
             newgame.append("category", findCategory);
             newgame.append("total", 0);
-            newgame.append("comments", new ArrayList<ObjectId>())
-            .append("ratings", new ArrayList<ObjectId>());
+
             database.getCollection("games").createIndex(
                     new Document("name", 1).append("_id", 1).append("category", 1).append("price", 1).append("price",
                             1),
                     new IndexOptions().unique(true));
+
             database.getCollection("games").insertOne(newgame);
             System.out.println("game created successfully!");
         
@@ -148,8 +141,45 @@ public class Game {
             System.out.println("Empty field.");
             return;
         }
+
+        Document found_user;
+        if (isHexadecimal(id_or_username_or_email)){
+            found_user = database.getCollection("users").find(eq("_id",
+             new ObjectId(id_or_username_or_email))).first();
+        }else {
+            found_user = database.getCollection("users").find(
+                    or(
+                            eq("username", id_or_username_or_email),
+                            eq("email", id_or_username_or_email)))
+                    .first();
+        }
+
+        
+        if (found_user == null) {
+            System.out.println("User not found.");
+            return;
+        } 
+
         System.out.print("Enter the game-name or game-id that he wants to purchase: ");
         String gameName_or_gameId = scanner.nextLine();
+        Document found_game = null;
+
+        if(isHexadecimal(gameName_or_gameId)){
+            found_game = database.getCollection("games").find(eq("_id", 
+            new ObjectId(gameName_or_gameId))).first();
+        }else{
+            found_game = database.getCollection("games").find(
+                  
+                            eq("name", gameName_or_gameId)
+                            )
+                    .first();
+        }
+
+        if (found_game == null) {
+            System.out.println("Game not found.");
+            return;
+        }
+
 
         List<String> bankNames = Arrays.asList(
                 "Bank of America",
@@ -203,75 +233,37 @@ public class Game {
         }
         System.out.println("Enter a currency US or EUR: ");
         String currency = scanner.nextLine();
-        Document found_user;
-        if (isHexadecimal(id_or_username_or_email)){
-            found_user = database.getCollection("users").find(eq("_id",
-             new ObjectId(id_or_username_or_email))).first();
-        }else {
-            found_user = database.getCollection("users").find(
-                    or(
-                            eq("username", id_or_username_or_email),
-                            eq("email", id_or_username_or_email)))
-                    .first();
+  
+        if ((int) found_user.get("age") <= (int) found_game.get("age_restriction")) {
+            System.out.println("User is not old enough to purchase this game.");
+            return;
         }
 
+        Document new_purchase = new Document();
 
-        if (found_user != null) {
+        new_purchase.append("amount", amount)
+                .append("currency", currency);
+        if (bankName != null && bankNumber != null) {
+            new_purchase.append("bank", new Document()
+                    .append("name", bankName)
+                    .append("number", bankNumber));
+        }
+        
+        ObjectId userId = found_user.getObjectId("_id"); 
+        ObjectId gameId = found_game.getObjectId("_id");
+        new_purchase.append("user_id", userId);
+        new_purchase.append("game_id", gameId);
+        new_purchase.append("created_at", new Date());
 
-            Document found_game = null;
+        InsertOneResult result = database.getCollection("purchases").insertOne(new_purchase);
 
-            if(isHexadecimal(gameName_or_gameId)){
-                found_game = database.getCollection("games").find(eq("_id", 
-                new ObjectId(gameName_or_gameId))).first();
-            }else{
-                found_game = database.getCollection("games").find(
-                      
-                                eq("name", gameName_or_gameId)
-                                )
-                        .first();
-            }
-    
-            if (found_game != null) {
-                if ((int) found_user.get("age") >= (int) found_game.get("age_restriction")) {
-
-                    Document new_purchase = new Document();
-
-                    new_purchase.append("amount", amount)
-                            .append("currency", currency);
-                    if (bankName != null && bankNumber != null) {
-                        new_purchase.append("bank", new Document()
-                                .append("name", bankName)
-                                .append("number", bankNumber));
-                    }
-                    
-                    new_purchase.append("created_at", new Date());
-
-                    InsertOneResult result = database.getCollection("purchases").insertOne(new_purchase);
-
-                    if (result.wasAcknowledged()) {
-                        System.out.println("Transaction created successfully!");
-                        found_game.put("total", (int) found_game.get("total") + 1);
-
-                        ObjectId userId = found_user.getObjectId("_id"); 
-                        ObjectId purchaseId = new_purchase.getObjectId("_id");
-                        Bson filter = Filters.eq("_id", userId);
-                        Bson push = Updates.push("purchases", purchaseId);
-                        database.getCollection("users").updateOne(filter, push);
-                    } else {
-                        System.out.println("Transaction not created.");
-                    }
-
-                } else {
-                    System.out.println("not old enough to buy this game.");
-                }
-
-            } else {
-                System.out.println("Game not found.");
-            }
-
+        if (result.wasAcknowledged()) {
+            System.out.println("Transaction created successfully!");
+            found_game.put("total", (int) found_game.get("total") + 1);
         } else {
-            System.out.println("user not found.");
+            System.out.println("Transaction not created.");
         }
+
     }
 
 

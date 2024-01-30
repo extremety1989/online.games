@@ -208,9 +208,7 @@ public class PopulateData {
                    
                     Document game = new Document().append("name", name).append("category", 
                     category).append("price", price)
-                            .append("age_restriction", age_restriction).append("total", 0)
-                            .append("comments", new ArrayList<ObjectId>())
-                            .append("ratings", new ArrayList<ObjectId>());
+                            .append("age_restriction", age_restriction).append("total", 0);
                      
                     games.add(game);
                 }
@@ -236,9 +234,6 @@ public class PopulateData {
             Date date = new Date();
             Document user = new Document().append("firstname",
              firstName).append("lastname", lastName).append("email", email).append("age", age)
-                    .append("comments", new ArrayList<ObjectId>())
-                    .append("ratings", new ArrayList<ObjectId>())
-                    .append("purchases", new ArrayList<ObjectId>())
                     .append("username", userName).append("password", password).append("created_at", date);
             users.add(user);
         }
@@ -264,6 +259,7 @@ public class PopulateData {
             String currency = "EUR";
             Document purchase = new Document();
             purchase.append("game_id", games.get(faker.random().nextInt(games.size())).getObjectId("_id"));
+            purchase.append("user_id", users.get(faker.random().nextInt(users.size())).getObjectId("_id"));
             purchase.append("created_at", new Date());
             purchase.append("bank", new Document().append("name", bankName).append("number", bankNumber));
             purchase.append("amount", amout)
@@ -271,19 +267,9 @@ public class PopulateData {
             purchases.add(purchase);
         }   
         database.getCollection("purchases").insertMany(purchases);
-        pushPurchaseIntoUSer(database, users, purchases);
     }
 
-    public void pushPurchaseIntoUSer(MongoDatabase database, List<Document> users, List<Document> purchases) {
-        for (Document user : users) {
-            Faker faker = new Faker();
-            ObjectId userId = user.getObjectId("_id"); 
-            ObjectId purchaseId = purchases.get(faker.random().nextInt(purchases.size())).getObjectId("_id");
-            Bson filter = Filters.eq("_id", userId);
-            Bson push = Updates.push("purchases", purchaseId);
-            database.getCollection("users").updateOne(filter, push);
-        }
-    }   
+
 
     public void createMockComment(MongoDatabase database, List<Document> users, List<Document> games) {
         List <Document> comments = new ArrayList<Document>();
@@ -293,27 +279,14 @@ public class PopulateData {
             String comment = faker.lorem().sentence();
             Document commentDoc = new Document();
             commentDoc.append("created_at", new Date());
+            commentDoc.append("game_id", games.get(faker.random().nextInt(games.size())).getObjectId("_id"));
+            commentDoc.append("user_id", users.get(faker.random().nextInt(users.size())).getObjectId("_id"));
             commentDoc.append("comment", comment);
             comments.add(commentDoc);
         }  
 
         database.getCollection("comments").insertMany(comments);
-        pushCommentIntoUSerAndGame(database, users, comments, games);
     }
-    public void pushCommentIntoUSerAndGame(MongoDatabase database, List<Document> users, List<Document> comments, List<Document> games) {
-        for (Document user : users) {
-            Faker faker = new Faker();
-            ObjectId userId = user.getObjectId("_id"); 
-            ObjectId commentId = comments.get(faker.random().nextInt(comments.size())).getObjectId("_id");
-            Bson filter = Filters.eq("_id", userId);
-            Bson push = Updates.push("comments", commentId);
-            database.getCollection("users").updateOne(filter, push);
-            ObjectId gamObjectId = games.get(faker.random().nextInt(games.size())).getObjectId("_id");
-            filter = Filters.eq("_id", userId);
-            push = Updates.push("comments", gamObjectId);
-            database.getCollection("games").updateOne(filter, push);
-        }
-    }   
 
     public void createMockRating(MongoDatabase database, List<Document> users, List<Document> games) {
         List <Document> ratings = new ArrayList<Document>();
@@ -323,29 +296,14 @@ public class PopulateData {
             Integer rating = faker.number().numberBetween(1, 5);
             Document ratingDoc = new Document();
             ratingDoc.append("created_at", new Date());
+            ratingDoc.append("game_id", games.get(faker.random().nextInt(games.size())).getObjectId("_id"));
+            ratingDoc.append("user_id", users.get(faker.random().nextInt(users.size())).getObjectId("_id"));
             ratingDoc.append("rating", rating);
             ratings.add(ratingDoc);
         } 
 
         database.getCollection("ratings").insertMany(ratings);
-        pushRatingInto(database, users, ratings, games);
     }
-
-    public void pushRatingInto(MongoDatabase database, List<Document> users, List<Document> ratings, List<Document> games) {
-        for (Document user : users) {
-            Faker faker = new Faker();
-            ObjectId userId = user.getObjectId("_id"); 
-            ObjectId ratingId = ratings.get(faker.random().nextInt(ratings.size())).getObjectId("_id");
-            Bson filter = Filters.eq("_id", userId);
-            Bson push = Updates.push("ratings", ratingId);
-            database.getCollection("users").updateOne(filter, push);
-
-            ObjectId gamObjectId = games.get(faker.random().nextInt(games.size())).getObjectId("_id");
-            filter = Filters.eq("_id", gamObjectId);
-            push = Updates.push("ratings", ratingId);
-            database.getCollection("games").updateOne(filter, push);
-        }
-    }   
 
 
 }

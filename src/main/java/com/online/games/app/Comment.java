@@ -3,8 +3,6 @@ package com.online.games.app;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.or;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -32,7 +30,7 @@ public class Comment {
         return matcher.matches();
     }
     public void run(Scanner scanner, MongoDatabase database, Reader reader){
-                        // Users management
+                      
                         boolean sub_exit = false;
 
                         while (!sub_exit) {
@@ -143,44 +141,32 @@ public class Comment {
             )
             ).first();
 
-        if (found_user != null) {
+        if (found_user == null) {
+            System.out.println("User not found.");
+            return;
+        }
+        Document found_game = database.getCollection("games").find(
+            eq("name", gameName)
+        ).first();
 
-            Document found_game = database.getCollection("games").find(
-                    eq("name", gameName)
-                ).first();
+        if (found_game == null) {
+            System.out.println("Game not found.");
+            return;
+        }
 
-                if (found_game != null) {
-                    ObjectId userId = found_user.getObjectId("_id"); 
-                    ObjectId gameId = found_game.getObjectId("_id");
-                    Document new_comment = new Document();
+        ObjectId userId = found_user.getObjectId("_id"); 
+        ObjectId gameId = found_game.getObjectId("_id");
+        Document new_comment = new Document();
 
-                    new_comment.append("game_id", gameId);
-                    new_comment.append("comment", comment)
-                    .append("created_at",  new Date());
-                    InsertOneResult result = database.getCollection("comments").insertOne(new_comment);
-                    if (result.wasAcknowledged()) {
-                      
-             
-                    ObjectId commentId = new_comment.getObjectId("_id");
-                    Bson filter = Filters.eq("_id", userId);
-                    Bson push = Updates.push("comments", commentId);
-                    database.getCollection("users").updateOne(filter, push);
-
-
-                    filter = Filters.eq("_id", gameId);
-                    push = Updates.push("comments", commentId);
-                    database.getCollection("games").updateOne(filter, push);
-
-                        System.out.println("Comment created successfully!");
-                    } else {
-                        System.out.println("Comment not created.");
-                    }
-                } else {
-                    System.out.println("Game not found.");
-                }
-
+        new_comment.append("user_id", userId);
+        new_comment.append("game_id", gameId);
+        new_comment.append("comment", comment)
+        .append("created_at",  new Date());
+        InsertOneResult result = database.getCollection("comments").insertOne(new_comment);
+        if (result.wasAcknowledged()) {
+            System.out.println("Comment created successfully!");
         } else {
-            System.out.println("user not found.");
+            System.out.println("Comment not created.");
         }
     }
 
@@ -191,10 +177,7 @@ public class Comment {
         DeleteResult deleteResult = database.getCollection("comments").deleteOne( 
             eq("_id", commentId));
         if (deleteResult.getDeletedCount() > 0) {
-            System.out.println("comment deleted successfully!");
-            Bson update = Updates.pull("comments", commentId);
-            database.getCollection("games").updateMany(eq("comments", commentId), update);
-            database.getCollection("users").updateMany(eq("comments", commentId), update);
+            System.out.println("comment deleted successfully!")
         } else {
             System.out.println("No comment deleted.");
         }

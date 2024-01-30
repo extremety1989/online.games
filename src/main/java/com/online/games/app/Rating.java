@@ -147,24 +147,15 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
             }
             Document new_rating = new Document();
             ObjectId gameId = found_game.getObjectId("_id");
+            ObjectId userId = found_user.getObjectId("_id");
             new_rating.append("game_id", gameId);
+            new_rating.append("user_id", userId);
             new_rating.append("rating", rating)
             .append("date",  new Date());
             InsertOneResult result = database.getCollection("ratings").insertOne(new_rating);
 
             if (result.wasAcknowledged()) {
-                
-                ObjectId userId = found_user.getObjectId("_id"); 
-            
-                ObjectId ratingId = new_rating.getObjectId("_id");
-                Bson filter = Filters.eq("_id", userId);
-                Bson push = Updates.push("ratings", ratingId);
-                database.getCollection("users").updateOne(filter, push);
-
-                filter = Filters.eq("_id", gameId);
-                push = Updates.push("ratings", ratingId);
-                database.getCollection("games").updateOne(filter, push);
-
+        
                 System.out.println("Rating created successfully!");
             } else {
                 System.out.println("Rating not created.");
@@ -173,13 +164,11 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
 
 
     private void delete(MongoDatabase database, String delete) {
-        ObjectId ratingId = new ObjectId(delete);
-        DeleteResult deleteResult = database.getCollection("ratings").deleteOne( eq("_id", new ObjectId(delete)));
+    
+        DeleteResult deleteResult = database.getCollection("ratings").deleteOne( eq("_id",
+         new ObjectId(delete)));
         if (deleteResult.getDeletedCount() > 0) {
             System.out.println("rating deleted successfully!");
-            Bson update = Updates.pull("ratings", ratingId);
-            database.getCollection("games").updateMany(eq("ratings", ratingId), update);
-            database.getCollection("users").updateMany(eq("ratings", ratingId), update);
         } else {
             System.out.println("No rating deleted.");
         }

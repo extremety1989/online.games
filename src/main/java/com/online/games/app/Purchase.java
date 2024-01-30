@@ -92,8 +92,6 @@ public class Purchase {
             eq("_id", purchaseId));
         if (deleteResult.getDeletedCount() > 0) {
             System.out.println("purchase deleted successfully!");
-            Bson update = Updates.pull("purchases", purchaseId);
-            database.getCollection("users").updateMany(eq("purchases", purchaseId), update);
         } else {
             System.out.println("No purchase deleted.");
         }

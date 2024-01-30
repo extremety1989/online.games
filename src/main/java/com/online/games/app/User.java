@@ -158,10 +158,7 @@ public class User {
                 .append("email", email)
                 .append("username", username)
                 .append("password", passwordHash)
-                .append("created_at", new Date())
-                .append("comments", new ArrayList<ObjectId>())
-                .append("ratings", new ArrayList<ObjectId>())
-                .append("purchases", new ArrayList<ObjectId>());
+                .append("created_at", new Date());
             database.getCollection("users").createIndex(
                 new Document("username", 1).append("email", 1).append("_id", 1).append("firstname", 1).append("lastname", 1), 
                 new IndexOptions().unique(true));
@@ -180,88 +177,87 @@ public class User {
         System.out.println("\n");
         int pageSize = 5;
   
-        Bson matchStage;
-        if(isHexadecimal(value)){
-            matchStage = Aggregates.match(eq("_id", new ObjectId(value)));
-        } else{
-            matchStage = Aggregates.match(
-                or(
+        Document found_user = null;
+        if (isHexadecimal(value)) {
+            found_user = database.getCollection("users").find(eq("_id", new ObjectId(value))).first();
+        } else {
+            found_user = database.getCollection("users").find(or(
                                         eq("username", value),
                                         eq("email", value))
-                                    
-            );
+                                    ).first();
+        }
+   
+
+        if(found_user == null){
+            System.out.println("No user found.");
+            return;
         }
 
-        Bson lookupStage = Aggregates.lookup(what, what, "_id", what);      
-        List<Bson> aggregationPipeline = Arrays.asList(matchStage, lookupStage);
-        long totalDocuments = database.getCollection("users").aggregate(aggregationPipeline)
-                .into(new ArrayList<>()).size();
-   
+        List <Document> documents = database.getCollection(what).find(
+            eq("user_id", found_user.getObjectId("_id"))
+        ).into(new ArrayList<>());
+
+        int totalDocuments = documents.size();
         int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
         System.out.printf("Total "+what+": %d\n", totalDocuments);
 
         if (totalPages == 0) {
             System.out.println("No "+what+" found.");
-        }else{
-            int currentPage = 1; // Start with page 1
-            boolean paginating = true;
+            return;
+        }
+        int currentPage = 1; // Start with page 1
+        boolean paginating = true;
 
-            while (paginating) {
-               
-                System.out.println("\n");
-                System.out.println(
-                        "------------------------------------------------------------------------------------------------------------------------------------------");
-            
-                int skipDocuments = (currentPage - 1) * pageSize;
+        while (paginating) {
+           
+            System.out.println("\n");
+            System.out.println(
+                    "------------------------------------------------------------------------------------------------------------------------------------------");
+        
+            int skipDocuments = (currentPage - 1) * pageSize;
 
-               
-                Bson limitStage = Aggregates.limit(pageSize); // set your desired limit here
-                Bson skipStage = Aggregates.skip(skipDocuments); // set your desired skip value here
-
-               
-                lookupStage = Aggregates.lookup(what, what, "_id", what);
-                
-                aggregationPipeline = Arrays.asList(matchStage, lookupStage, skipStage, limitStage);
-                
-                database.getCollection("users").aggregate(aggregationPipeline)
-                        .into(new ArrayList<>())
-                        .forEach(document -> System.out.println(document.toJson(JsonWriterSettings.builder().indent(true).build())));
+            database.getCollection(what).find(
+                eq("user_id", found_user.getObjectId("_id"))
+            )
+            .skip(skipDocuments)
+            .limit(pageSize)
+            .into(new ArrayList<>())
+            .forEach(document -> System.out.println(document.toJson(JsonWriterSettings.builder().indent(true).build())));
 
 
-                // Pagination controls
-                System.out.println(
-                        "------------------------------------------------------------------------------------------------------------------------------------------");
-                System.out.print("\n");
-                System.out.printf("Page %d of %d\n", currentPage, totalPages);
-                System.out.print("\n");
-                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
-                System.out.print("\n");
-                System.out.print("Enter option: ");
+            // Pagination controls
+            System.out.println(
+                    "------------------------------------------------------------------------------------------------------------------------------------------");
+            System.out.print("\n");
+            System.out.printf("Page %d of %d\n", currentPage, totalPages);
+            System.out.print("\n");
+            System.out.printf("n: Next page | p: Previous page | q: Quit\n");
+            System.out.print("\n");
+            System.out.print("Enter option: ");
 
-                String paginationOption = scanner.nextLine();
+            String paginationOption = scanner.nextLine();
 
-                switch (paginationOption) {
-                    case "n":
-                        if (currentPage < totalPages) {
-                            currentPage++;
-                        } else {
-                            System.out.println("You are on the last page.");
-                        }
-                        break;
-                    case "p":
-                        if (currentPage > 1) {
-                            currentPage--;
-                        } else {
-                            System.out.println("You are on the first page.");
-                        }
-                        break;
-                    case "q":
-                        paginating = false;
-                        break;
-                    default:
-                        System.out.println("Invalid option. Please try again.");
-                        break;
-                }
+            switch (paginationOption) {
+                case "n":
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                    } else {
+                        System.out.println("You are on the last page.");
+                    }
+                    break;
+                case "p":
+                    if (currentPage > 1) {
+                        currentPage--;
+                    } else {
+                        System.out.println("You are on the first page.");
+                    }
+                    break;
+                case "q":
+                    paginating = false;
+                    break;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+                    break;
             }
         }
     }
