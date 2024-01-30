@@ -43,7 +43,7 @@ public class App {
                 Purchase purchase = new Purchase();
                 Comment comment = new Comment();
                 Rating rating = new Rating();
-                PopulateData bulkData = new PopulateData();
+                PopulateData populate = new PopulateData();
 
                 boolean exit = false;
                 while (!exit) {
@@ -78,7 +78,7 @@ public class App {
                     } else if (option == 6) {
                        purchase.run(scanner, database, reader);
                     } else if (option == 7) {
-                        bulkData.createMock(database);
+                        populate.createMock(database);
                     }
                     
                     else if (option == 0) {
