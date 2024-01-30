@@ -37,7 +37,7 @@ import static java.util.Collections.singletonList;
 
 public class User {
 
-            private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
+    private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
 
     private static boolean isHexadecimal(String input) {
         final Matcher matcher = HEXADECIMAL_PATTERN.matcher(input);

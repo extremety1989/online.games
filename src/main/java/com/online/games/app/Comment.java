@@ -3,6 +3,8 @@ package com.online.games.app;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.or;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -10,19 +12,25 @@ import java.util.regex.Pattern;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.bson.json.JsonWriterSettings;
 import org.bson.types.ObjectId;
 
-import com.mongodb.client.FindIterable;
 
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
+import com.mongodb.client.result.UpdateResult;
 
 public class Comment {
 
+    private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
 
+    private static boolean isHexadecimal(String input) {
+        final Matcher matcher = HEXADECIMAL_PATTERN.matcher(input);
+        return matcher.matches();
+    }
     public void run(Scanner scanner, MongoDatabase database, Reader reader){
                         // Users management
                         boolean sub_exit = false;
@@ -32,8 +40,10 @@ public class Comment {
                             System.out.println("\n");
                             System.out.println("Choose an operation:");
                             System.out.println("1: Create comment");
-                            System.out.println("2: Delete comment");
-                            System.out.println("3: List All comments");
+                            System.out.println("2: View comment");
+                            System.out.println("3: Update comment");
+                            System.out.println("4: Delete comment");
+                            System.out.println("5: List All comments");
              
                             System.out.println("0: Return to main menu");
                             System.out.print("Enter option: ");
@@ -52,13 +62,27 @@ public class Comment {
                             }
                             else if (sub_option == 2) {
 
+                                System.out.print("Enter id of comment to view: ");
+                               
+                                this.updateOrView(scanner, database,  false);
+                              
+                            } 
+                            else if (sub_option == 3) {
+
+                                System.out.print("Enter id of comment to update: ");
+                       
+                                this.updateOrView(scanner, database,  true);
+                              
+                            } 
+                            else if (sub_option == 4) {
+
                                 System.out.print("Enter id of comment to delete: ");
                                 String delete = scanner.nextLine();
                                 this.delete(database, delete);
                               
                             } 
                 
-                            else if (sub_option == 3) {
+                            else if (sub_option == 5) {
                                 reader.read(scanner, database, "comments");
                             } 
 
@@ -70,6 +94,44 @@ public class Comment {
                                 break;
                             }
                         }
+    }
+
+        private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
+        Document updateDoc = new Document();
+           String update = scanner.nextLine();
+            Document found = null;
+            if (isHexadecimal(update)) {
+                found = database.getCollection("comments").find(eq("_id", new ObjectId(update))).first();
+            } 
+            if(found == null){
+                System.out.println("No comment found.");
+                return;
+            }
+
+            if(!ok){
+                System.out.println(found.toJson(JsonWriterSettings.builder().indent(true).build()));
+                return;
+            }
+
+            System.out.print("Enter new comments: ");
+            String newcomment = scanner.nextLine();
+
+            if (!newcomment.isEmpty()) {
+                updateDoc.append("comment", newcomment);
+            }
+                                
+            UpdateResult updateResult = null;
+            
+            if (isHexadecimal(update)) {
+                updateResult = database.getCollection("comments").updateOne(
+                    eq("_id", new ObjectId(update)), new Document("$set", updateDoc));
+            }
+
+            if (updateResult.getModifiedCount() > 0) {
+                System.out.println("user updated successfully!");
+            } else {
+                System.out.println("No user found.");
+            }
     }
 
 

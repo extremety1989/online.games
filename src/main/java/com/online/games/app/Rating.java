@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.bson.json.JsonWriterSettings;
 import org.bson.types.ObjectId;
 
 import com.mongodb.client.FindIterable;
@@ -19,6 +20,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
+import com.mongodb.client.result.UpdateResult;
 
 public class Rating {
 
@@ -32,8 +34,10 @@ public class Rating {
                             System.out.println("\n");
                             System.out.println("Choose an operation:");
                             System.out.println("1: Create rating");
-                            System.out.println("2: Delete rating");
-                            System.out.println("3: List All ratings");
+                            System.out.println("2: View rating");
+                            System.out.println("3: Update rating");
+                            System.out.println("4: Delete rating");
+                            System.out.println("5: List All ratings");
                             System.out.println("0: Return to main menu");
                             System.out.print("Enter option: ");
 
@@ -54,13 +58,26 @@ public class Rating {
                             }
                             else if (sub_option == 2) {
 
+                                System.out.print("Enter id of rating to view: ");
+                             
+                                this.updateOrView(scanner, database, false);
+                              
+                            } 
+                            else if (sub_option == 3) {
+
+                                System.out.print("Enter id of rating to update: ");
+                                this.updateOrView(scanner, database, true);
+                              
+                            } 
+                            else if (sub_option == 4) {
+
                                 System.out.print("Enter id of rating to delete: ");
                                 String delete = scanner.nextLine();
                                 this.delete(database, delete);
                               
                             } 
                             
-                            else if (sub_option == 3) {
+                            else if (sub_option == 5) {
                                 reader.read(scanner, database, "ratings");
                             } 
                             else if (sub_option == 0) {
@@ -71,6 +88,43 @@ public class Rating {
                                 break;
                             }
                         }
+    }
+
+private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
+   
+        Document updateDoc = new Document();
+           String update = scanner.nextLine();
+            Document found = null;
+            found = database.getCollection("ratings").find(eq("_id", new ObjectId(update))).first();
+            if(found == null){
+                System.out.println("No rating found.");
+                return;
+            }
+
+            if(!ok){
+                System.out.println(found.toJson(JsonWriterSettings.builder().indent(true).build()));
+                return;
+            }
+
+            System.out.print("Enter new ratings: ");
+            String newrating = scanner.nextLine();
+
+            if (!newrating.isEmpty()) {
+                updateDoc.append("rating", newrating);
+            }
+                                
+            UpdateResult updateResult = null;
+            
+            if (isHexadecimal(update)) {
+                updateResult = database.getCollection("ratings").updateOne(
+                    eq("_id", new ObjectId(update)), new Document("$set", updateDoc));
+            }
+
+            if (updateResult.getModifiedCount() > 0) {
+                System.out.println("user updated successfully!");
+            } else {
+                System.out.println("No user found.");
+            }
     }
 
     
