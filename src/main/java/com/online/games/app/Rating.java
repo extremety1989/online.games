@@ -176,8 +176,8 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
         DeleteResult deleteResult = database.getCollection("ratings").deleteOne( eq("_id", new ObjectId(delete)));
         if (deleteResult.getDeletedCount() > 0) {
             System.out.println("rating deleted successfully!");
-            database.getCollection("games").deleteOne(eq("comments", new ObjectId(delete)));
-            database.getCollection("users").deleteOne(eq("comments", new ObjectId(delete)));
+            database.getCollection("games").deleteOne(eq("ratings", new ObjectId(delete)));
+            database.getCollection("users").deleteOne(eq("ratings", new ObjectId(delete)));
         } else {
             System.out.println("No rating deleted.");
         }
