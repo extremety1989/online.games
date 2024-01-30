@@ -152,13 +152,16 @@ public class Purchase {
 
     private void deleteOrView(MongoDatabase database, String delete, boolean ok) {
         if(!ok){
-            Document found = database.getCollection("users").find(
+            Document found = database.getCollection("purchases").find(
              
        
-                        eq("_id", delete))
+                        eq("_id", new ObjectId(delete)))
                 
                 .first();
-                System.out.println(found.toJson(JsonWriterSettings.builder().indent(true).build()));
+                if (found != null){
+                    System.out.println(found.toJson(JsonWriterSettings.builder().indent(true).build()));
+                    return;
+                }
                 return;
         }
         DeleteResult deleteResult = database.getCollection("purchases").deleteOne(eq("_id", delete));

@@ -113,12 +113,8 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
                 updateDoc.append("rating", newrating);
             }
                                 
-            UpdateResult updateResult = null;
-            
-            if (isHexadecimal(update)) {
-                updateResult = database.getCollection("ratings").updateOne(
-                    eq("_id", new ObjectId(update)), new Document("$set", updateDoc));
-            }
+            UpdateResult updateResult = database.getCollection("ratings").updateOne(
+                eq("_id", new ObjectId(update)), new Document("$set", updateDoc));
 
             if (updateResult.getModifiedCount() > 0) {
                 System.out.println("user updated successfully!");
