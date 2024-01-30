@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.bson.json.JsonWriterSettings;
 import org.bson.types.ObjectId;
 
 import com.mongodb.client.FindIterable;
@@ -32,8 +33,9 @@ public class Purchase {
             System.out.println("\n");
             System.out.println("Choose an operation:");
             System.out.println("1: Create purchase");
-            System.out.println("2: Delete purchase");
-            System.out.println("3: List All purchases");
+            System.out.println("2: View purchase");
+            System.out.println("3: Delete purchase");
+            System.out.println("4: List All purchases");
 
             System.out.println("0: Return to main menu");
             System.out.print("Enter option: ");
@@ -57,13 +59,33 @@ public class Purchase {
                 String currency = scanner.nextLine();
                 this.purchaseAGame(database, id_or_username_or_email, gameName_or_gameId, bankName, bankNumber, amount,
                         currency);
-            } else if (sub_option == 2) {
+            } 
+            
+            else if (sub_option == 2) {
 
-                System.out.print("Enter id of purchase to delete: ");
+                System.out.print("Enter id of purchase to view: ");
                 String delete = scanner.nextLine();
-                this.delete(database, delete);
+                this.delete(database, delete, false);
 
             } 
+
+            else if (sub_option == 3){
+                System.out.print("Enter id of purchase to delete: ");
+                String delete = scanner.nextLine();
+                this.delete(database, delete, true);
+            }
+
+            else if (sub_option == 4) {
+                this.listAll(database, scanner, reader);
+            }
+
+            else if (sub_option == 0) {
+                sub_exit = true;
+                break;
+            } else {
+                System.out.println("Invalid option. Please try again.");
+                break;
+            }
             else if (sub_option == 3) {
                 reader.read(scanner, database, "purchases");
             }
@@ -83,7 +105,7 @@ public class Purchase {
 
         Document found_user = database.getCollection("users").find(
                 or(
-                        eq("_id", id_or_username_or_email),
+       
                         eq("username", id_or_username_or_email),
                         eq("email", id_or_username_or_email)))
                 .first();
@@ -92,7 +114,7 @@ public class Purchase {
 
             Document found_game = database.getCollection("games").find(
                     or(
-                            eq("_id", gameName_or_gameId),
+          
                             eq("name", gameName_or_gameId)))
                     .first();
             if (found_game != null) {
@@ -139,7 +161,17 @@ public class Purchase {
     }
 
 
-    private void delete(MongoDatabase database, String delete) {
+    private void delete(MongoDatabase database, String delete, boolean ok) {
+        if(!ok){
+            Document found = database.getCollection("users").find(
+             
+       
+                        eq("_id", delete))
+                
+                .first();
+                System.out.println(found.toJson(JsonWriterSettings.builder().indent(true).build()));
+                return;
+        }
         DeleteResult deleteResult = database.getCollection("purchases").deleteOne(eq("_id", delete));
         if (deleteResult.getDeletedCount() > 0) {
             System.out.println("purchase deleted successfully!");

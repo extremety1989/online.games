@@ -53,12 +53,13 @@ public class User {
                             System.out.println("\n");
                             System.out.println("Choose an operation:");
                             System.out.println("1: Create user");
-                            System.out.println("2: Update user");
-                            System.out.println("3: Delete user");
-                            System.out.println("4: List All users");
-                            System.out.println("5: List All comments by user");
-                            System.out.println("6: List All ratings by user");
-                            System.out.println("7: List All purchases by user");
+                            System.out.println("2: View user");
+                            System.out.println("3: Update user");
+                            System.out.println("4: Delete user");
+                            System.out.println("5: List All users");
+                            System.out.println("6: List All comments by user");
+                            System.out.println("7: List All ratings by user");
+                            System.out.println("8: List All purchases by user");
                             System.out.println("0: Return to main menu");
                             System.out.print("Enter option: ");
 
@@ -84,37 +85,47 @@ public class User {
                                 this.create(database, 
                                 lastname, firstname, age, email, username, password);
                             
-                            } else if (sub_option == 2) {
+                            } 
+                            else if (sub_option == 2) {
 
                            
                                 System.out.print(
                                         "Enter user-id or username or email of user (or press enter to skip): ");
-                                
 
-                                this.update(scanner, database);
-                            } else if (sub_option == 3) {
+                                this.update(scanner, database, false);
+                            } 
+                            else if (sub_option == 3) {
+
+                           
+                                System.out.print(
+                                        "Enter user-id or username or email of user (or press enter to skip): ");
+
+                                this.update(scanner, database, true);
+                            } 
+                            
+                            else if (sub_option == 4) {
                              
                                 System.out.print("Enter id, username or email of user to delete: ");
                                 String delete = scanner.nextLine();
                                 this.delete(database, delete);
                              
-                            } else if (sub_option == 4) {
+                            } else if (sub_option == 5) {
                               
                                 reader.read(scanner, database, "users");
                             } 
-                            else if (sub_option == 5){
+                            else if (sub_option == 6){
                                 
                                 System.out.print("Enter user_id, username or email to find: ");
                             
                                 this.readAll(scanner, database, "comments");
                             }
-                            else if (sub_option == 6){
+                            else if (sub_option == 7){
                                 
                                 System.out.print("Enter user_id, username or email to find: ");
                             
                                 this.readAll(scanner, database, "ratings");
                             }
-                            else if (sub_option == 7){
+                            else if (sub_option == 8){
                                 
                                 System.out.print("Enter user_id, username or email to find: ");
                             
@@ -275,7 +286,7 @@ public class User {
         }
     }
 
-    private void update(Scanner scanner, MongoDatabase database){
+    private void update(Scanner scanner, MongoDatabase database, Boolean ok){
         Document updateDoc = new Document();
                                 String update = scanner.nextLine();
             Document found;
@@ -289,6 +300,11 @@ public class User {
             }
             if(found == null){
                 System.out.println("No user found.");
+                return;
+            }
+
+            if(!ok){
+                System.out.println(found.toJson(JsonWriterSettings.builder().indent(true).build()));
                 return;
             }
 
