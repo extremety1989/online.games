@@ -55,7 +55,7 @@ public class App {
                     System.out.println("4: Comments management");
                     System.out.println("5: Ratings management");
                     System.out.println("6: Purchases management");
-                    System.out.println("7: Bulk mongodb");
+                    System.out.println("7: Populate mongodb");
                     System.out.println("0: Exit");
                     System.out.print("Enter option: ");
                     int option = scanner.nextInt();
