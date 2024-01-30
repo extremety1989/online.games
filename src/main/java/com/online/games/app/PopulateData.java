@@ -208,7 +208,10 @@ public class PopulateData {
                    
                     Document game = new Document().append("name", name).append("category", 
                     category).append("price", price)
-                            .append("age_restriction", age_restriction).append("total", 0);
+                            .append("age_restriction", age_restriction).append("total", 0)
+                            .append("comments", new ArrayList<ObjectId>())
+                            .append("ratings", new ArrayList<ObjectId>());
+                     
                     games.add(game);
                 }
         }

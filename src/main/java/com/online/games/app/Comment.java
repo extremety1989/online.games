@@ -128,9 +128,9 @@ public class Comment {
             }
 
             if (updateResult.getModifiedCount() > 0) {
-                System.out.println("user updated successfully!");
+                System.out.println("comment updated successfully!");
             } else {
-                System.out.println("No user found.");
+                System.out.println("No comment found.");
             }
     }
 

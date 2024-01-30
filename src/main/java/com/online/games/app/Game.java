@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.bson.json.JsonWriterSettings;
 import org.bson.types.ObjectId;
 
 
@@ -45,10 +46,11 @@ public class Game {
             System.out.println("\n");
             System.out.println("Choose an operation:");
             System.out.println("1: Create game");
-            System.out.println("2: Update game");
-            System.out.println("3: Delete game");
-            System.out.println("4: List All games");
-            System.out.println("5: Purchase a game");
+            System.out.println("2: View game");
+            System.out.println("3: Update game");
+            System.out.println("4: Delete game");
+            System.out.println("5: List All games");
+            System.out.println("6: Purchase a game");
             System.out.println("0: Return to main menu");
             System.out.print("Enter option: ");
 
@@ -69,27 +71,34 @@ public class Game {
                 System.out.print("Enter age limit: ");
                 String age_limit_string = scanner.nextLine();
                 Integer age_limit = Integer.parseInt(age_limit_string);
-                scanner.nextLine();
+        
                 this.create(database, name, category, age_limit, price);
 
             } 
             else if (sub_option == 2) {
 
                 System.out.print(
-                        "Enter game-id or game-name to update (or press enter to skip): ");
+                        "Enter game-id or game-name to view: ");
 
-                this.update(scanner, database);
+                this.updateOrView(scanner, database, false);
             } 
             else if (sub_option == 3) {
+
+                System.out.print(
+                        "Enter game-id or game-name to update (or press enter to skip): ");
+
+                this.updateOrView(scanner, database, true);
+            } 
+            else if (sub_option == 4) {
              
                 System.out.print("Enter id or name of game to delete: ");
                 String delete = scanner.nextLine();
                 this.delete(database, delete);
 
-            } else if (sub_option == 4) {
+            } else if (sub_option == 5) {
                 reader.read(scanner, database, "games");
 
-            } else if (sub_option == 5) {
+            } else if (sub_option == 6) {
                 this.purchaseAGame(scanner, database);
             } else if (sub_option == 0) {
                 sub_exit = true;
@@ -116,6 +125,8 @@ public class Game {
                     .append("age_restriction", age_restriction);
             newgame.append("category", findCategory);
             newgame.append("total", 0);
+            newgame.append("comments", new ArrayList<ObjectId>())
+            .append("ratings", new ArrayList<ObjectId>());
             database.getCollection("games").createIndex(
                     new Document("name", 1).append("_id", 1).append("category", 1).append("price", 1).append("price",
                             1),
@@ -283,8 +294,25 @@ public class Game {
 
 
 
-    private void update(Scanner scanner, MongoDatabase database) {
+    private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok) {
         String id_or_name = scanner.nextLine();
+        if(!ok){
+            Document found_game;
+            if(isHexadecimal(id_or_name)){
+                found_game = database.getCollection("games").find(eq("_id",
+                 new ObjectId(id_or_name))).first();
+            }else{
+                found_game = database.getCollection("games").find(eq("name",
+                 id_or_name)).first();
+            }
+            if (found_game != null) {
+                System.out.println(found_game.toJson(JsonWriterSettings.builder().indent(true).build()));
+            } else {
+                System.out.println("No game found.");
+            }
+            return;
+        }
+       
 
         Document updateDoc = new Document();
 

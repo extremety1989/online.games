@@ -158,7 +158,10 @@ public class User {
                 .append("email", email)
                 .append("username", username)
                 .append("password", passwordHash)
-                .append("created_at", new Date());
+                .append("created_at", new Date())
+                .append("comments", new ArrayList<ObjectId>())
+                .append("ratings", new ArrayList<ObjectId>())
+                .append("purchases", new ArrayList<ObjectId>());
             database.getCollection("users").createIndex(
                 new Document("username", 1).append("email", 1).append("_id", 1).append("firstname", 1).append("lastname", 1), 
                 new IndexOptions().unique(true));
