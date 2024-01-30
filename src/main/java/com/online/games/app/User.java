@@ -163,7 +163,7 @@ public class User {
 
 
     private void readAll(Scanner scanner, MongoDatabase database, String what) {
-        System.out.print("Enter user_id, username or email to find: ");
+    
         String value = scanner.nextLine();
         System.out.println("\n");
         int pageSize = 5;
