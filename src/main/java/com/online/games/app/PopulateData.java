@@ -187,8 +187,12 @@ public class PopulateData {
         List <Document> categories = new ArrayList<Document>();
         int size = categoryNames.size();
         for (int i = 0; i < size; i++){
+            Faker faker = new Faker();
             String name = categoryNames.get(i);
-            categories.add(new Document().append("name", name));
+            String description = faker.lorem().sentence();
+            Document category = new Document().append("name", name).append("description", description);
+            categories.add(category);
+            
         }
         database.getCollection("categories").createIndex(
             new Document("name", 1).append("_id", 1),
@@ -293,12 +297,12 @@ public class PopulateData {
 
         for (int i = 0; i < 1000; i++) {
             Faker faker = new Faker();
-            Integer rating = faker.number().numberBetween(1, 5);
+            Integer score = faker.number().numberBetween(1, 5);
             Document ratingDoc = new Document();
             ratingDoc.append("created_at", new Date());
             ratingDoc.append("game_id", games.get(faker.random().nextInt(games.size())).getObjectId("_id"));
             ratingDoc.append("user_id", users.get(faker.random().nextInt(users.size())).getObjectId("_id"));
-            ratingDoc.append("rating", rating);
+            ratingDoc.append("score", score);
             ratings.add(ratingDoc);
         } 
 

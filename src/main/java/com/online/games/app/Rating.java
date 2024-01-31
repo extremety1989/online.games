@@ -110,7 +110,7 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
             String newrating = scanner.nextLine();
 
             if (!newrating.isEmpty()) {
-                updateDoc.append("rating", newrating);
+                updateDoc.append("score", newrating);
             }
                                 
             UpdateResult updateResult = database.getCollection("ratings").updateOne(
@@ -150,7 +150,7 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
             ObjectId userId = found_user.getObjectId("_id");
             new_rating.append("game_id", gameId);
             new_rating.append("user_id", userId);
-            new_rating.append("rating", rating)
+            new_rating.append("score", rating)
             .append("date",  new Date());
             InsertOneResult result = database.getCollection("ratings").insertOne(new_rating);
 

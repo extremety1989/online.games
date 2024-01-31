@@ -52,8 +52,10 @@ public class Category {
               
                                 System.out.print("Enter name: ");
                                 String name = scanner.nextLine();
+                                System.out.print("Enter description: ");
+                                String description = scanner.nextLine();
                       
-                                this.create(database, name);
+                                this.create(database, name, description);
                             
                             }  
                             else if (sub_option == 2) {
@@ -91,14 +93,15 @@ public class Category {
                             }
                         }
     }
-    private void create(MongoDatabase database, String name){
-        if (name.isEmpty()) {
+    private void create(MongoDatabase database, String name, String description){
+        if (name.isEmpty() || description.isEmpty()) {
             System.out.println("Please enter the field.");
             return;
         }
 
         Document category = new Document()
-        .append("name", name);
+        .append("name", name)
+        .append("description", description);
         database.getCollection("categories").createIndex(
             new Document("name", 1).append("_id", 1),
             new IndexOptions().unique(true));
@@ -146,8 +149,15 @@ public class Category {
         System.out.print("Enter new name: ");
         String newName = scanner.nextLine();
 
-        if (!newName.isEmpty()) {
+        System.out.print("Enter new description: ");
+        String newDescription = scanner.nextLine();
+
+
+        if (!newName.isEmpty() ) {
             updateDoc.append("name", newName);
+        }
+        if (!newDescription.isEmpty()) {
+            updateDoc.append("description", newDescription);
         }
         UpdateResult updateResult = null;
         if(isHexadecimal(update)){
