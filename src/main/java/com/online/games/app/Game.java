@@ -117,9 +117,7 @@ public class Game {
         System.out.print("Enter category: ");
         String category = scanner.nextLine();
         System.out.println("\n");
-        Document findCategory = database.getCollection("categories").find(eq("name", category)).first();
-        System.out.println("Games in " + category + ":");
-        if (findCategory != null) {
+
         int pageSize = 5;
 
         long totalDocuments = database.getCollection("games").countDocuments(eq("category.name", category));
@@ -141,7 +139,7 @@ public class Game {
  
                 
                 database.getCollection("games").
-                find(eq("category.name", findCategory.get("name"))).skip(skipDocuments).limit(pageSize)
+                find(eq("category.name", category)).skip(skipDocuments).limit(pageSize)
                         .into(new ArrayList<>())
                         .forEach(document -> System.out.println(document.toJson(JsonWriterSettings.builder().indent(true).build())));
                 System.out.println(
@@ -180,9 +178,7 @@ public class Game {
             }
         }
            
-        } else {
-            System.out.println("Category not found.");
-        }
+
     }
 
     private void findByPrice(Scanner scanner, MongoDatabase database) {
@@ -300,7 +296,7 @@ public class Game {
             return;
         }
 
-        Document found_user;
+        Document found_user = null;
         if (isHexadecimal(id_or_username_or_email)){
             found_user = database.getCollection("users").find(eq("_id",
              new ObjectId(id_or_username_or_email))).first();
