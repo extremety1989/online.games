@@ -373,12 +373,10 @@ public class Game {
         String bankName = bankNames.get(bankChoice - 1);
         System.out.println("Enter bank number: ");
 
-        String bankNumber_string = scanner.nextLine();
-        Integer bankNumber = null;
-        if (!bankNumber_string.isEmpty()) {
-            bankNumber = Integer.parseInt(bankNumber_string);
-        }
-        if (bankNumber != null && (bankNumber < 0 || bankNumber > 9999_9999_9999L)) {
+        System.out.println("Enter bank number (12-length long): ");
+
+        String bankNumber = scanner.nextLine();
+        if (bankNumber.isEmpty() || bankNumber.length() != 12) {
             System.out.println("Invalid bank number. Please try again.");
             return;
         }
