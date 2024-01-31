@@ -115,7 +115,7 @@ public class Comment {
             String newcomment = scanner.nextLine();
 
             if (!newcomment.isEmpty()) {
-                updateDoc.append("comment", newcomment);
+                updateDoc.append("text", newcomment);
             }
                                 
             UpdateResult updateResult = null;
@@ -160,7 +160,7 @@ public class Comment {
 
         new_comment.append("user_id", userId);
         new_comment.append("game_id", gameId);
-        new_comment.append("comment", comment)
+        new_comment.append("text", comment)
         .append("created_at",  new Date());
         InsertOneResult result = database.getCollection("comments").insertOne(new_comment);
         if (result.wasAcknowledged()) {

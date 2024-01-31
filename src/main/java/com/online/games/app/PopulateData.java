@@ -281,7 +281,7 @@ public class PopulateData {
             commentDoc.append("created_at", new Date());
             commentDoc.append("game_id", games.get(faker.random().nextInt(games.size())).getObjectId("_id"));
             commentDoc.append("user_id", users.get(faker.random().nextInt(users.size())).getObjectId("_id"));
-            commentDoc.append("comment", comment);
+            commentDoc.append("text", comment);
             comments.add(commentDoc);
         }  
 
