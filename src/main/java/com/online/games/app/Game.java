@@ -1,8 +1,10 @@
 package com.online.games.app;
 
+import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.or;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -43,7 +45,9 @@ public class Game {
             System.out.println("3: Update game");
             System.out.println("4: Delete game");
             System.out.println("5: List All games");
-            System.out.println("6: Purchase a game");
+            System.out.println("6: List All games by category");
+            System.out.println("7: List All games by price");
+            System.out.println("8: Purchase a game");
             System.out.println("0: Return to main menu");
             System.out.print("Enter option: ");
 
@@ -92,6 +96,12 @@ public class Game {
                 reader.read(scanner, database, "games");
 
             } else if (sub_option == 6) {
+                this.findByCategory(scanner, database);
+
+            } else if (sub_option == 7) {
+                this.findByPrice(scanner, database);
+            }
+            else if (sub_option == 8) {
                 this.purchaseAGame(scanner, database);
             } else if (sub_option == 0) {
                 sub_exit = true;
@@ -99,6 +109,154 @@ public class Game {
             } else {
                 System.out.println("Invalid option. Please try again.");
                 break;
+            }
+        }
+    }
+
+    private void findByCategory(Scanner scanner, MongoDatabase database) {
+        System.out.print("Enter category: ");
+        String category = scanner.nextLine();
+        System.out.println("\n");
+        Document findCategory = database.getCollection("categories").find(eq("name", category)).first();
+        System.out.println("Games in " + category + ":");
+        if (findCategory != null) {
+        int pageSize = 5;
+
+        long totalDocuments = database.getCollection("games").countDocuments(eq("category.name", category));
+        int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
+        System.out.printf("Total games: %d\n", totalDocuments);
+        if (totalPages == 0) {
+            System.out.println("No games found.");
+        }else{
+            int currentPage = 1; // Start with page 1
+            boolean paginating = true;
+
+            while (paginating) {
+               
+                System.out.println("\n");
+                System.out.println(
+                        "------------------------------------------------------------------------------------------------------------------------------------------");
+
+                int skipDocuments = (currentPage - 1) * pageSize;
+ 
+                
+                database.getCollection("games").
+                find(eq("category.name", findCategory.get("name"))).skip(skipDocuments).limit(pageSize)
+                        .into(new ArrayList<>())
+                        .forEach(document -> System.out.println(document.toJson(JsonWriterSettings.builder().indent(true).build())));
+                System.out.println(
+                        "------------------------------------------------------------------------------------------------------------------------------------------");
+                System.out.print("\n");
+                System.out.printf("Page %d of %d\n", currentPage, totalPages);
+                System.out.print("\n");
+                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
+                System.out.print("\n");
+                System.out.print("Enter option: ");
+
+                String paginationOption = scanner.nextLine();
+
+                switch (paginationOption) {
+                    case "n":
+                        if (currentPage < totalPages) {
+                            currentPage++;
+                        } else {
+                            System.out.println("You are on the last page.");
+                        }
+                        break;
+                    case "p":
+                        if (currentPage > 1) {
+                            currentPage--;
+                        } else {
+                            System.out.println("You are on the first page.");
+                        }
+                        break;
+                    case "q":
+                        paginating = false;
+                        break;
+                    default:
+                        System.out.println("Invalid option. Please try again.");
+                        break;
+                }
+            }
+        }
+           
+        } else {
+            System.out.println("Category not found.");
+        }
+    }
+
+    private void findByPrice(Scanner scanner, MongoDatabase database) {
+        System.out.println("Enter minimum price: ");
+        String price_string = scanner.nextLine();
+        Double minPrice = Double.parseDouble(price_string);
+        System.out.println("Enter maximum price: ");
+        String maxPrice_string = scanner.nextLine();
+        Double maxPrice = Double.parseDouble(maxPrice_string);
+        System.out.println("\n");
+        System.out.println("Games between " + minPrice + " and " + maxPrice + ":");
+        System.out.println("\n");
+
+  
+        int pageSize = 5;
+
+        long totalDocuments = database.getCollection("games").countDocuments(and(eq("price", new Document("$gte", minPrice)),
+        eq("price", new Document("$lte", maxPrice))));
+      
+        int totalPages = (int) Math.ceil((double) totalDocuments / pageSize);
+        System.out.printf("Total games: %d\n", totalDocuments);
+        if (totalPages == 0) {
+            System.out.println("No games found.");
+        }else{
+            int currentPage = 1; // Start with page 1
+            boolean paginating = true;
+
+            while (paginating) {
+               
+                System.out.println("\n");
+                System.out.println(
+                        "------------------------------------------------------------------------------------------------------------------------------------------");
+
+                int skipDocuments = (currentPage - 1) * pageSize;
+ 
+                
+                database.getCollection("games").find(and(eq("price", new Document("$gte", minPrice)),
+                eq("price", new Document("$lte", maxPrice))))
+                .skip(skipDocuments).limit(pageSize)
+                        .forEach(document -> System.out.println(document.toJson(JsonWriterSettings.builder().indent(true).build())));
+            
+                System.out.println(
+                        "------------------------------------------------------------------------------------------------------------------------------------------");
+                System.out.print("\n");
+                System.out.printf("Page %d of %d\n", currentPage, totalPages);
+                System.out.print("\n");
+                System.out.printf("n: Next page | p: Previous page | q: Quit\n");
+                System.out.print("\n");
+                System.out.print("Enter option: ");
+
+                String paginationOption = scanner.nextLine();
+
+                switch (paginationOption) {
+                    case "n":
+                        if (currentPage < totalPages) {
+                            currentPage++;
+                        } else {
+                            System.out.println("You are on the last page.");
+                        }
+                        break;
+                    case "p":
+                        if (currentPage > 1) {
+                            currentPage--;
+                        } else {
+                            System.out.println("You are on the first page.");
+                        }
+                        break;
+                    case "q":
+                        paginating = false;
+                        break;
+                    default:
+                        System.out.println("Invalid option. Please try again.");
+                        break;
+                }
             }
         }
     }
