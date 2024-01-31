@@ -59,6 +59,9 @@ public class Game {
                 System.out.print("Enter name: ");
                 String name = scanner.nextLine();
 
+                System.out.print("Enter description: ");
+                String description = scanner.nextLine();
+
                 System.out.print("Enter category: ");
                 String category = scanner.nextLine();
 
@@ -69,7 +72,7 @@ public class Game {
                 String age_limit_string = scanner.nextLine();
                 Integer age_limit = Integer.parseInt(age_limit_string);
         
-                this.create(database, name, category, age_limit, price);
+                this.create(database, name, description, category, age_limit, price);
 
             } 
             else if (sub_option == 2) {
@@ -257,7 +260,7 @@ public class Game {
         }
     }
 
-    private void create(MongoDatabase database, String name, String categoryName, Integer age_restriction,
+    private void create(MongoDatabase database, String name, String description, String categoryName, Integer age_restriction,
             Double price) {
         if (name.isEmpty() || price == null || age_restriction == null || categoryName.isEmpty()) {
             System.out.println("Please enter all fields.");
@@ -268,6 +271,7 @@ public class Game {
         if (findCategory != null) {
             Document newgame = new Document()
                     .append("name", name)
+                    .append("description", description)
                     .append("price", price)
                     .append("age_restriction", age_restriction);
             newgame.append("category", findCategory);
@@ -370,9 +374,9 @@ public class Game {
         System.out.println("Enter bank number: ");
 
         String bankNumber_string = scanner.nextLine();
-        Long bankNumber = null;
+        Integer bankNumber = null;
         if (!bankNumber_string.isEmpty()) {
-            bankNumber = Long.parseLong(bankNumber_string);
+            bankNumber = Integer.parseInt(bankNumber_string);
         }
         if (bankNumber != null && (bankNumber < 0 || bankNumber > 9999_9999_9999L)) {
             System.out.println("Invalid bank number. Please try again.");
@@ -465,6 +469,9 @@ public class Game {
         System.out.print("Enter new name: ");
         String newName = scanner.nextLine();
 
+        System.out.print("Enter new description: ");
+        String newDescription = scanner.nextLine();
+
         System.out.print("Enter new category: ");
         String categoryInput = scanner.nextLine();
 
@@ -484,6 +491,9 @@ public class Game {
         }
         if (!newName.isEmpty()) {
             updateDoc.append("name", newName);
+        }
+        if (!newDescription.isEmpty()) {
+            updateDoc.append("description", newDescription);
         }
         if (newPrice != null) {
             updateDoc.append("price", newPrice);

@@ -187,10 +187,9 @@ public class PopulateData {
         List <Document> categories = new ArrayList<Document>();
         int size = categoryNames.size();
         for (int i = 0; i < size; i++){
-            Faker faker = new Faker();
             String name = categoryNames.get(i);
-            String description = faker.lorem().sentence();
-            Document category = new Document().append("name", name).append("description", description);
+            Document category = new Document().append("name", 
+            name);
             categories.add(category);
             
         }
@@ -210,7 +209,9 @@ public class PopulateData {
                     Double price = prices.get(faker.random().nextInt(prices.size()));
                     Integer age_restriction = faker.number().numberBetween(9, 18);
                    
-                    Document game = new Document().append("name", name).append("category", 
+                    Document game = new Document().append("name", name)
+                    .append("description", faker.lorem().sentence())
+                    .append("category", 
                     category).append("price", price)
                             .append("age_restriction", age_restriction).append("total", 0);
                      
