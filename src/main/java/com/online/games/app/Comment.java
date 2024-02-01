@@ -56,7 +56,7 @@ public class Comment {
                                 String gameName_or_gameId = scanner.nextLine();
                                 System.out.print("Enter comment: ");
                                 String comment = scanner.nextLine();
-                                this.createComment(database, username_or_email, gameName_or_gameId, comment);
+                                this.create(database, username_or_email, gameName_or_gameId, comment);
                             }
                             else if (sub_option == 2) {
 
@@ -133,7 +133,7 @@ public class Comment {
     }
 
 
-    private void createComment(MongoDatabase database, String username_or_email, String gameName,String comment){
+    private void create(MongoDatabase database, String username_or_email, String gameName,String comment){
         Document found_user = database.getCollection("users").find(
             or(
                 eq("username", username_or_email),

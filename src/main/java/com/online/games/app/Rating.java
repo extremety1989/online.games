@@ -54,7 +54,7 @@ public class Rating {
                                     System.out.println("Invalid rating. Please try again.");
                                     break;
                                 }
-                                this.createRating(database, username_or_email, gameName, rating);
+                                this.create(database, username_or_email, gameName, rating);
                             }
                             else if (sub_option == 2) {
 
@@ -124,7 +124,7 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
     }
 
     
-    private void createRating(MongoDatabase database, String username_or_email, String gameName, Integer rating){
+    private void create(MongoDatabase database, String username_or_email, String gameName, Integer rating){
         Document found_user = database.getCollection("users").find(
             or(
                 eq("username", username_or_email),
