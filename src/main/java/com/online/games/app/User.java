@@ -90,7 +90,7 @@ public class User {
                                 System.out.print(
                                         "Enter user-id or username or email of user (or press enter to skip): ");
 
-                                this.update(scanner, database, false);
+                                this.updateOrView(scanner, database, false);
                             } 
                             else if (sub_option == 3) {
 
@@ -98,7 +98,7 @@ public class User {
                                 System.out.print(
                                         "Enter user-id or username or email of user (or press enter to skip): ");
 
-                                this.update(scanner, database, true);
+                                this.updateOrView(scanner, database, true);
                             } 
                             
                             else if (sub_option == 4) {
@@ -283,7 +283,7 @@ public class User {
         }
     }
 
-    private void update(Scanner scanner, MongoDatabase database, Boolean ok){
+    private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
         Document updateDoc = new Document();
                                 String update = scanner.nextLine();
             Document found;
