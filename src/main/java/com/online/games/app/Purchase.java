@@ -1,25 +1,19 @@
 package com.online.games.app;
 
 import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.Filters.or;
 
-import java.util.Date;
 import java.util.Scanner;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 import org.bson.Document;
-import org.bson.conversions.Bson;
+
 import org.bson.json.JsonWriterSettings;
 import org.bson.types.ObjectId;
 
-import com.mongodb.client.FindIterable;
 
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertOneResult;
+
 
 public class Purchase {
 
