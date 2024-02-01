@@ -68,7 +68,7 @@ public class Game {
                 System.out.print("Enter price: ");
                 String price_string = scanner.nextLine();
                 Double price = Double.parseDouble(price_string);
-                System.out.print("Enter age limit: ");
+                System.out.print("Enter age restriction: ");
                 String age_limit_string = scanner.nextLine();
                 Integer age_limit = Integer.parseInt(age_limit_string);
         
