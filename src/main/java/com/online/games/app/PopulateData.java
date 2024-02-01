@@ -194,7 +194,7 @@ public class PopulateData {
             
         }
         database.getCollection("categories").createIndex(
-            new Document("name", 1).append("_id", 1),
+            new Document("name", 1),
             new IndexOptions().unique(true));
         database.getCollection("categories").insertMany(categories);
         this.createMockGame(database, categories);
@@ -220,7 +220,7 @@ public class PopulateData {
         }
  
         database.getCollection("games").createIndex(
-            new Document("name", 1).append("_id", 1),
+            new Document("name", 1),
             new IndexOptions().unique(true));
         database.getCollection("games").insertMany(games);
     }
@@ -243,7 +243,7 @@ public class PopulateData {
             users.add(user);
         }
         database.getCollection("users").createIndex(
-                new Document("username", 1).append("email", 1).append("_id", 1), 
+                new Document("username", 1).append("email", 1), 
                 new IndexOptions().unique(true));
 
         database.getCollection("users").insertMany(users);
