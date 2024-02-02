@@ -180,6 +180,7 @@ public class PopulateData {
         database.getCollection("ratings").drop();
         this.createMockCategory(database);
         this.createMockUser(database);
+        System.out.println("Data has been populated");
     }
 
     public void createMockCategory(MongoDatabase database) {
