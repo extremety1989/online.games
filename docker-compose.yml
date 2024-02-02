@@ -2,7 +2,7 @@ services:
   mongo:
     image: mongo
     ports:
-      - "27018:27017" # Map host port 27018 to container port 27017
+      - "27018:27017"
     networks:
       - app-network
     restart: always
