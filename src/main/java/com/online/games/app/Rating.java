@@ -9,15 +9,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.bson.Document;
-import org.bson.conversions.Bson;
+
 import org.bson.json.JsonWriterSettings;
 import org.bson.types.ObjectId;
 
-import com.mongodb.client.FindIterable;
+
 
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Updates;
+
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
@@ -146,19 +145,21 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
             return;
         }
 
-        if (found_user == null) {
-            System.out.println("User not found.");
-            return;
+        Document found_game = null;
+        if (isHexadecimal(gameName)) {
+            found_game = database.getCollection("users").find(eq("_id", 
+            new ObjectId(gameName))).first();
+        } else {
+            found_game = database.getCollection("users").find(
+                                        eq("name", gameName)
+                         
+                                    ).first();
         }
 
-        Document found_game = database.getCollection("games").find(
-            eq("name", gameName)
-            ).first();
-
-            if (found_game == null) {
-                System.out.println("Game not found.");
-                return;
-            }
+        if (found_game == null) {
+            System.out.println("Game not found.");
+            return;
+        }
             Document new_rating = new Document();
             ObjectId gameId = found_game.getObjectId("_id");
             ObjectId userId = found_user.getObjectId("_id");

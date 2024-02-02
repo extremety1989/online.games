@@ -149,9 +149,16 @@ public class Comment {
             System.out.println("No user found.");
             return;
         }
-        Document found_game = database.getCollection("games").find(
-            eq("name", gameName)
-        ).first();
+        Document found_game = null;
+        if (isHexadecimal(gameName)) {
+            found_game = database.getCollection("users").find(eq("_id", 
+            new ObjectId(gameName))).first();
+        } else {
+            found_game = database.getCollection("users").find(
+                                        eq("name", gameName)
+                         
+                                    ).first();
+        }
 
         if (found_game == null) {
             System.out.println("Game not found.");
