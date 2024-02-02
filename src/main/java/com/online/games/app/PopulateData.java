@@ -6,17 +6,16 @@ import java.util.Arrays;
 
 import java.util.List;
 
-import javax.print.Doc;
+
 
 import org.bson.Document;
-import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
+
 
 import com.github.javafaker.Faker;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
+
 import com.mongodb.client.model.IndexOptions;
-import com.mongodb.client.model.Updates;
+
 
 public class PopulateData {
     private final List<String> gameNames = Arrays.asList(
