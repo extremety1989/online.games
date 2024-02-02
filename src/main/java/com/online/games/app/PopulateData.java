@@ -219,9 +219,6 @@ public class PopulateData {
                 }
         }
  
-        database.getCollection("games").createIndex(
-            new Document("name", 1),
-            new IndexOptions().unique(true));
         database.getCollection("games").insertMany(games);
     }
 
