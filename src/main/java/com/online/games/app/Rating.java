@@ -23,7 +23,12 @@ import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
 
 public class Rating {
+    private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
 
+    private static boolean isHexadecimal(String input) {
+        final Matcher matcher = HEXADECIMAL_PATTERN.matcher(input);
+        return matcher.matches();
+    }
 
     public void run(Scanner scanner, MongoDatabase database, Reader reader){
               
@@ -45,7 +50,7 @@ public class Rating {
                             scanner.nextLine(); 
                             if (sub_option == 1) {
                                 System.out.print("Enter user-id or username or email: ");
-                                String username_or_email = scanner.nextLine();
+                                String id_or_username_or_email = scanner.nextLine();
                                 System.out.print("Enter the game-name or game-id that he wants to rate: ");
                                 String gameName = scanner.nextLine();
                                 System.out.print("Enter rating: (1-5)");
@@ -54,7 +59,7 @@ public class Rating {
                                     System.out.println("Invalid rating. Please try again.");
                                     break;
                                 }
-                                this.create(database, username_or_email, gameName, rating);
+                                this.create(database, id_or_username_or_email, gameName, rating);
                             }
                             else if (sub_option == 2) {
 
@@ -124,13 +129,22 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
     }
 
     
-    private void create(MongoDatabase database, String username_or_email, String gameName, Integer rating){
-        Document found_user = database.getCollection("users").find(
-            or(
-                eq("username", username_or_email),
-                eq("email", username_or_email)
-            )
-            ).first();
+    private void create(MongoDatabase database, String id_or_username_or_email, String gameName, Integer rating){
+        Document found_user = null;
+        if (isHexadecimal(id_or_username_or_email)) {
+            found_user = database.getCollection("users").find(eq("_id", new ObjectId(id_or_username_or_email))).first();
+        } else {
+            found_user = database.getCollection("users").find(or(
+                                        eq("username", id_or_username_or_email),
+                                        eq("email", id_or_username_or_email))
+                                    ).first();
+        }
+   
+
+        if(found_user == null){
+            System.out.println("No user found.");
+            return;
+        }
 
         if (found_user == null) {
             System.out.println("User not found.");

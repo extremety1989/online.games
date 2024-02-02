@@ -51,12 +51,12 @@ public class Comment {
                             if (sub_option == 1) 
                             {
                                 System.out.print("Enter id or username or email of user: ");
-                                String username_or_email = scanner.nextLine();
+                                String id_or_username_or_email = scanner.nextLine();
                                 System.out.print("Enter name of game: ");
                                 String gameName_or_gameId = scanner.nextLine();
                                 System.out.print("Enter comment: ");
                                 String comment = scanner.nextLine();
-                                this.create(database, username_or_email, gameName_or_gameId, comment);
+                                this.create(database, id_or_username_or_email, gameName_or_gameId, comment);
                             }
                             else if (sub_option == 2) {
 
@@ -133,16 +133,20 @@ public class Comment {
     }
 
 
-    private void create(MongoDatabase database, String username_or_email, String gameName,String comment){
-        Document found_user = database.getCollection("users").find(
-            or(
-                eq("username", username_or_email),
-                eq("email", username_or_email)
-            )
-            ).first();
+    private void create(MongoDatabase database, String id_or_username_or_email, String gameName,String comment){
+        Document found_user = null;
+        if (isHexadecimal(id_or_username_or_email)) {
+            found_user = database.getCollection("users").find(eq("_id", new ObjectId(id_or_username_or_email))).first();
+        } else {
+            found_user = database.getCollection("users").find(or(
+                                        eq("username", id_or_username_or_email),
+                                        eq("email", id_or_username_or_email))
+                                    ).first();
+        }
+   
 
-        if (found_user == null) {
-            System.out.println("User not found.");
+        if(found_user == null){
+            System.out.println("No user found.");
             return;
         }
         Document found_game = database.getCollection("games").find(

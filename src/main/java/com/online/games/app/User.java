@@ -160,7 +160,7 @@ public class User {
                 .append("password", passwordHash)
                 .append("created_at", new Date());
             database.getCollection("users").createIndex(
-                new Document("username", 1).append("email", 1).append("_id", 1).append("firstname", 1).append("lastname", 1), 
+                new Document("username", 1).append("email", 1),
                 new IndexOptions().unique(true));
             database.getCollection("users").insertOne(newuser);
             System.out.println("user created successfully!");
