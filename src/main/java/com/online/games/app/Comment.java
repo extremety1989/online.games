@@ -183,8 +183,8 @@ public class Comment {
 
 
 
-    private void delete(MongoDatabase database, String delete) {
-        ObjectId commentId = new ObjectId(delete);
+    private void delete(MongoDatabase database, String id) {
+        ObjectId commentId = new ObjectId(id);
         DeleteResult deleteResult = database.getCollection("comments").deleteOne( 
             eq("_id", commentId));
         if (deleteResult.getDeletedCount() > 0) {
