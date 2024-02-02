@@ -188,7 +188,7 @@ public class Comment {
         DeleteResult deleteResult = database.getCollection("comments").deleteOne( 
             eq("_id", commentId));
         if (deleteResult.getDeletedCount() > 0) {
-            System.out.println("comment deleted successfully!")
+            System.out.println("comment deleted successfully!");
         } else {
             System.out.println("No comment deleted.");
         }
