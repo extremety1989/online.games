@@ -147,10 +147,10 @@ private void updateOrView(Scanner scanner, MongoDatabase database, Boolean ok){
 
         Document found_game = null;
         if (isHexadecimal(gameName)) {
-            found_game = database.getCollection("users").find(eq("_id", 
+            found_game = database.getCollection("games").find(eq("_id", 
             new ObjectId(gameName))).first();
         } else {
-            found_game = database.getCollection("users").find(
+            found_game = database.getCollection("games").find(
                                         eq("name", gameName)
                          
                                     ).first();
